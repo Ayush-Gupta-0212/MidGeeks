@@ -26,16 +26,10 @@ import requests
 
 import config
 
-GRAPH_URL = f"https://graph.facebook.com/{config.GRAPH_API_VERSION}"
+GRAPH_URL = f"https://graph.instagram.com/{config.GRAPH_API_VERSION}"
 
 
 def _require_credentials():
-    # --- TEMPORARY DEBUG: remove once the token issue is resolved ---
-    t = config.IG_ACCESS_TOKEN
-    print(f"[debug] token length: {len(t)}")
-    print(f"[debug] has leading/trailing whitespace: {t != t.strip()}")
-    print(f"[debug] starts with: {t[:6]!r}  ends with: {t[-6:]!r}")
-    # -----------------------------------------------------------------
     missing = [
         name
         for name, val in [("IG_USER_ID", config.IG_USER_ID), ("IG_ACCESS_TOKEN", config.IG_ACCESS_TOKEN)]
