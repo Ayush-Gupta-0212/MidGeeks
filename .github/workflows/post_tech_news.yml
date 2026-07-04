@@ -1,12 +1,19 @@
 name: Post Tech News Carousel
 
 # Two ways this runs:
-#  1. schedule  -> fully automatic, every day at the time below (UTC)
+#  1. schedule  -> fully automatic, twice a day at the times below (UTC)
 #  2. workflow_dispatch -> the manual "Run workflow" button on the Actions
 #     tab (also usable from the GitHub mobile app = a single tap trigger)
+#
+# GitHub Actions cron is always UTC, regardless of DISPLAY_TIMEZONE_OFFSET_HOURS
+# in config.py (that setting only affects the date printed on the slide).
+# IST is UTC+5:30, so:
+#   9:00 AM IST  = 3:30 AM UTC  -> "30 3 * * *"
+#   6:00 PM IST  = 12:30 PM UTC -> "30 12 * * *"
 on:
   schedule:
-    - cron: "0 13 * * *"   # 13:00 UTC daily — edit to your preferred time
+    - cron: "30 3 * * *"    # 9:00 AM IST
+    - cron: "30 12 * * *"   # 6:00 PM IST
   workflow_dispatch:
     inputs:
       dry_run:
