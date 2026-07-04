@@ -1,0 +1,79 @@
+name: Post Tech News Carousel
+
+# Two ways this runs:
+#  1. schedule  -> fully automatic, every day at the time below (UTC)
+#  2. workflow_dispatch -> the manual "Run workflow" button on the Actions
+#     tab (also usable from the GitHub mobile app = a single tap trigger)
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 13:00 UTC daily — edit to your preferred time
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate slides only, don't post to Instagram"
+        type: boolean
+        default: false
+      unofficial:
+        description: "Use the instagrapi path instead of the official API"
+        type: boolean
+        default: false
+
+# Needed so the workflow can commit the generated slide images back to the
+# repo (that's what makes their raw.githubusercontent.com URL work).
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          if [ "${{ inputs.unofficial }}" = "true" ]; then pip install instagrapi; fi
+
+      - name: Fetch today's stories
+        run: python fetch_news.py
+
+      - name: Generate slide images
+        run: python generate_slides.py
+
+      - name: Commit generated slides
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "tech-news-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add output/ posted_history.json todays_stories.json
+          git commit -m "Slides for $(date -u +'%Y-%m-%d')" || echo "nothing to commit"
+          git push
+
+      # Images are now live on raw.githubusercontent.com (repo must be public)
+      - name: Post to Instagram (official Graph API)
+        if: ${{ inputs.dry_run != true && inputs.unofficial != true }}
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IMAGE_HOST_MODE: github
+        run: python post_instagram_official.py
+
+      - name: Post to Instagram (unofficial instagrapi path)
+        if: ${{ inputs.dry_run != true && inputs.unofficial == true }}
+        env:
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+        run: python post_instagram_unofficial.py
+
+      - name: Upload slides as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slides-${{ github.run_id }}
+          path: output/
+          retention-days: 7

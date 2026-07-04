@@ -1,0 +1,6 @@
+feedparser==6.0.11
+Pillow==11.0.0
+requests==2.32.3
+
+# Only needed if you use the unofficial path (--unofficial):
+# instagrapi==2.5.0
