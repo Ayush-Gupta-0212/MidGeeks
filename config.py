@@ -30,6 +30,24 @@ STORY_SLIDE_COUNT = 5
 # Set to None to disable filtering for a given feed.
 KEYWORD_ALLOWLIST = None  # e.g. ["AI", "chip", "app", "startup", "software"]
 
+# Stories are skipped if title+summary+link contains any of these — a light
+# default net against off-brand content (piracy-adjacent sites, movie/TV
+# reviews that general-interest feeds like Ars Technica sometimes include).
+# Tune freely; matching is case-insensitive substring, so keep terms specific.
+KEYWORD_BLOCKLIST = [
+    "archive.gl",
+    "torrent",
+    "piracy",
+    "box office",
+    "movie review",
+    "film review",
+]
+
+# Hours to add to UTC for the date printed on the cover slide (does NOT
+# affect the cron schedule in the workflow, which is always UTC).
+# 0 = UTC, 5.5 = India (IST), -5 = US Eastern, etc.
+DISPLAY_TIMEZONE_OFFSET_HOURS = 0
+
 # File that remembers which article URLs we've already posted, so the bot
 # never repeats a story. Committed back to the repo after every run.
 HISTORY_FILE = "posted_history.json"
@@ -62,7 +80,7 @@ OUTPUT_DIR = "output"
 # The @handle shown in the small corner tag on every slide. Not a secret —
 # just edit this one line before you push. (CLI --handle, if passed to
 # run_pipeline.py, overrides this for a one-off local run.)
-IG_HANDLE = "@midgeeks.studio"
+IG_HANDLE = "@yourhandle"
 
 # ---------------------------------------------------------------------------
 # INSTAGRAM — OFFICIAL GRAPH API (recommended path)

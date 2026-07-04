@@ -10,14 +10,28 @@ for sources). RSS has no such restriction — it's the public feed the
 publisher already broadcasts to every reader.
 """
 
+import html
 import json
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
 import feedparser
 
 import config
+
+_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _clean_html(text):
+    """RSS summaries sometimes carry raw HTML (hnrss.org wraps its summary
+    in <p>/<a> tags; Ars Technica uses inline <em> etc.). Strip tags and
+    unescape entities so slides show plain text, not markup."""
+    if not text:
+        return ""
+    no_tags = _TAG_RE.sub(" ", text)
+    return html.unescape(" ".join(no_tags.split()))
 
 
 def _entry_timestamp(entry):
@@ -34,6 +48,13 @@ def _passes_keyword_filter(entry, allowlist):
         return True
     haystack = f"{entry.get('title', '')} {entry.get('summary', '')}".lower()
     return any(word.lower() in haystack for word in allowlist)
+
+
+def _passes_blocklist(candidate_text, blocklist):
+    if not blocklist:
+        return True
+    haystack = candidate_text.lower()
+    return not any(word.lower() in haystack for word in blocklist)
 
 
 def load_history():
@@ -75,11 +96,16 @@ def fetch_candidates():
             if not _passes_keyword_filter(entry, config.KEYWORD_ALLOWLIST):
                 continue
 
+            title = (entry.get("title") or "").strip()
+            summary = _clean_html(entry.get("summary"))
+            if not _passes_blocklist(f"{title} {summary} {link}", config.KEYWORD_BLOCKLIST):
+                continue
+
             candidates.append(
                 {
                     "source": feed["name"],
-                    "title": (entry.get("title") or "").strip(),
-                    "summary": (entry.get("summary") or "").strip(),
+                    "title": title,
+                    "summary": summary,
                     "link": link,
                     "timestamp": _entry_timestamp(entry),
                 }

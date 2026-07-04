@@ -72,9 +72,25 @@ before running anything: a cover slide, three story slides, and an outro.
 This is why the bot is built on RSS instead of the news APIs every tutorial
 reaches for first: RSS is the publisher's own public broadcast feed, so there's
 no ToS to violate by reading it on a schedule. `fetch_news.py` pulls all five
-feeds, drops anything already posted (tracked in `posted_history.json`,
-pruned after 30 days), de-dupes near-identical headlines across outlets, and
-keeps the freshest `STORY_SLIDE_COUNT` (default 5).
+feeds, **strips any raw HTML the feed embeds in its summary** (hnrss.org wraps
+its summary in `<p>`/`<a>` tags; Ars Technica uses inline `<em>` — both get
+cleaned to plain text before rendering), drops anything already posted
+(tracked in `posted_history.json`, pruned after 30 days), de-dupes
+near-identical headlines across outlets, and keeps the freshest
+`STORY_SLIDE_COUNT` (default 5).
+
+**Content filtering**: `KEYWORD_BLOCKLIST` in `config.py` skips anything
+matching a short default list (piracy-adjacent terms, "movie review", "box
+office") since general-interest feeds like Ars Technica occasionally mix in
+non-tech culture content, and Hacker News' front page occasionally surfaces
+stories linking to shadow-library-type sites. It's a starting heuristic, not
+a perfect filter — tune the list as you see what comes through. `KEYWORD_ALLOWLIST`
+is the inverse (require a match) if you want to narrow to specific beats.
+
+**Timezone**: the cover slide's date is computed in UTC by default, since
+that's the GitHub Actions runner's clock. Set `DISPLAY_TIMEZONE_OFFSET_HOURS`
+in `config.py` (e.g. `5.5` for India) if you want the printed date to match
+your own local date instead of the runner's.
 
 If you later want broader coverage, **Currents API** and **The Guardian Open
 Platform** are two of the few news APIs whose free tiers explicitly permit

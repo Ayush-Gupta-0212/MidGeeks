@@ -14,7 +14,7 @@ rendered at the exact same CANVAS_SIZE.
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -127,8 +127,9 @@ def render_cover(story_count, date_str, handle):
     eyebrow_font = _font("mono", 30)
     draw.text((MARGIN, 150), "// TECH SIGNAL", font=eyebrow_font, fill=config.COLORS["accent"])
 
+    noun = "headline" if story_count == 1 else "headlines"
     headline_font, lines = _autosize_headline(
-        draw, f"{story_count} headlines you missed today", W - 2 * MARGIN, 5, 96, 60
+        draw, f"{story_count} {noun} you missed today", W - 2 * MARGIN, 5, 96, 60
     )
     sub_font = _font("body", 34)
 
@@ -171,7 +172,13 @@ def render_story(story, index, total, handle):
     dek_font = _font("body", 30)
     summary = " ".join(story.get("summary", "").split())
     if summary:
-        wrapped = _wrap_to_width(draw, summary, dek_font, W - 2 * MARGIN)[:2]
+        all_lines = _wrap_to_width(draw, summary, dek_font, W - 2 * MARGIN)
+        wrapped = all_lines[:2]
+        if len(all_lines) > 2:
+            last = wrapped[-1].rstrip(".,;:")
+            while _text_width(draw, last + "…", dek_font) > W - 2 * MARGIN and " " in last:
+                last = last.rsplit(" ", 1)[0]
+            wrapped[-1] = last + "…"
         if wrapped:
             blocks.append(
                 (wrapped, dek_font, config.COLORS["muted"], int(dek_font.size * 1.35), 0)
@@ -220,7 +227,8 @@ def generate(stories, handle=None, out_dir=None):
             os.remove(os.path.join(out_dir, f))
 
     total = len(stories) + 2
-    date_str = datetime.now().strftime("%B %-d, %Y") if os.name != "nt" else datetime.now().strftime("%B %d, %Y")
+    display_time = datetime.now(timezone.utc) + timedelta(hours=config.DISPLAY_TIMEZONE_OFFSET_HOURS)
+    date_str = display_time.strftime("%B %-d, %Y") if os.name != "nt" else display_time.strftime("%B %d, %Y")
     paths = []
 
     cover = render_cover(len(stories), date_str, handle)
