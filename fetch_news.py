@@ -22,6 +22,7 @@ import feedparser
 import config
 
 _TAG_RE = re.compile(r"<[^>]+>")
+_LINK_ONLY_RE = re.compile(r"^\s*article url\s*:", re.IGNORECASE)
 
 
 def _clean_html(text):
@@ -31,7 +32,13 @@ def _clean_html(text):
     if not text:
         return ""
     no_tags = _TAG_RE.sub(" ", text)
-    return html.unescape(" ".join(no_tags.split()))
+    cleaned = html.unescape(" ".join(no_tags.split()))
+    # hnrss.org's "summary" is just "Article URL: ... Comments URL: ..." —
+    # link metadata, not a real description. Drop it so slides fall back to
+    # no dek instead of printing raw URLs.
+    if _LINK_ONLY_RE.match(cleaned):
+        return ""
+    return cleaned
 
 
 def _entry_timestamp(entry):
