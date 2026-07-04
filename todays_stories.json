@@ -1,37 +1,37 @@
 [
   {
-    "source": "The Verge",
-    "title": "White House deletes thousands of web pages about energy conservation as heatwave slams US",
-    "summary": "The US Department of Energy reportedly deleted about 6,000 pages related to energy conservation as a historic heatwave tears across the country. The deletion was suspiciously timed, following Republican outrage over Mayor Zohran Mamdani asking New Yorkers to help reduce strain on the grid by setting their AC to 78 degrees. Republicans like Ted Cruz [\u2026]",
-    "link": "https://www.theverge.com/policy/961449/white-house-mamdani-heatwave-deletion",
-    "timestamp": 1783181946.0
+    "source": "Hacker News",
+    "title": "Potential session/cache leakage between workspace instances or consumer accounts",
+    "summary": "",
+    "link": "https://github.com/anthropics/claude-code/issues/74066",
+    "timestamp": 1783173820.0
   },
   {
     "source": "The Verge",
-    "title": "Matic\u2019s robot vacuum is getting a $250 price hike in September",
-    "summary": "The Matic is our favorite robot vacuum by a pretty comfortable margin. If you\u2019ve been thinking about buying one, you may want to plan on doing it sooner than later. The company will raise its price by $250 on September 9th, going from $1,245 to $1,495. Matic told The Verge that the new price reflects [\u2026]",
-    "link": "https://www.theverge.com/gadgets/960753/matic-robot-vacuum-mop-price-increase-cost-buy",
-    "timestamp": 1783180800.0
-  },
-  {
-    "source": "Wired",
-    "title": "Submit Your Questions: Inside The World of Online Romance Scams",
-    "summary": "The Yahoo Boys author Carlos Barrag\u00e1n will join Kate Knibbs to answer your questions about Nigeria's romance scammers.",
-    "link": "https://www.wired.com/story/livestream-book-club-inside-the-world-of-online-romance-scams/",
-    "timestamp": 1783180800.0
-  },
-  {
-    "source": "TechCrunch",
-    "title": "What is Mistral AI? Everything to know about the OpenAI competitor",
-    "summary": "Mistral AI, which offers some open source AI models, has raised significant funding since its creation in 2023, with the ambition to \u201cput frontier AI in the hands of everyone.\u201d",
-    "link": "https://techcrunch.com/2026/07/04/what-is-mistral-ai-everything-to-know-about-the-openai-competitor/",
-    "timestamp": 1783180292.0
+    "title": "Hey number pad lovers, this is a keyboard we can finally agree on",
+    "summary": "I know a vocal group of people who swear by the number pad on their keyboard. And yet, for years I haven't cared about using one - until I put my hands on the Epomaker RT98. It's a mechanical keyboard with a charming retro aesthetic, a fun CRT-like screen, VIA compatibility, a nice typing feel, [\u2026]",
+    "link": "https://www.theverge.com/tech/960837/epomaker-rt98-mechanical-keyboard-modular-numpad-review",
+    "timestamp": 1783173600.0
   },
   {
     "source": "The Verge",
-    "title": "Flatbush Zombies\u2019 Erick the Architect misses his BlackBerry keyboard",
-    "summary": "Erick the Architect is a founding member of, and the primary producer for, the legendary Flatbush Zombies. He's toured the world, performed on Kimmel and Fallon, played Coachella, and collaborated with everyone from Joey Bada$$ and the Rza to James Blake and hardcore punk band Trash Talk. But perhaps the most unexpected collab was with [\u2026]",
-    "link": "https://www.theverge.com/entertainment/960958/flatbush-zombies-erick-the-architect-interview",
-    "timestamp": 1783177200.0
+    "title": "The square-ish phone that I wanted to love",
+    "summary": "The Ikko MindOne Pro is delightfully small. I keep calling it a square phone, which isn't quite right; the screen is square, but the phone itself is slightly rectangular. The camera flips up so you can use it for selfies - you can even open it partway to use as a stand or a kind [\u2026]",
+    "link": "https://www.theverge.com/tech/960509/ikko-mindone-pro-hands-on",
+    "timestamp": 1783170000.0
+  },
+  {
+    "source": "Hacker News",
+    "title": "Explanation of everything you can see in htop/top on Linux (2019)",
+    "summary": "",
+    "link": "https://peteris.rocks/blog/htop/",
+    "timestamp": 1783166457.0
+  },
+  {
+    "source": "The Verge",
+    "title": "The fanfiction community is at war with AI \u2014 and itself",
+    "summary": "Over the past week, a new fanworks movement has kicked off, with the aim to root out authors using generative AI. But the detection methods being implemented are questionable, and any fanfic writer could be caught in the crossfire. Broad distaste around the use of Claude, ChatGPT, and other AI tools has long been a [\u2026]",
+    "link": "https://www.theverge.com/tech/960854/ai-fanfiction-ao3-claude-detector",
+    "timestamp": 1783166400.0
   }
 ]
