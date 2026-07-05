@@ -16,6 +16,7 @@ Key design decisions:
 """
 
 import base64
+import time
 from io import BytesIO
 
 import requests
@@ -24,6 +25,20 @@ from PIL import Image
 import config
 
 _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+# Free-tier image generation is capped at roughly 10 images/minute. We space
+# requests out and retry on 429 (rate limit) with growing backoff so a normal
+# 6-slide post stays comfortably under the limit instead of firing all at once.
+_MIN_SECONDS_BETWEEN_CALLS = 7
+_last_call_time = [0.0]
+
+
+def _throttle():
+    """Ensure at least _MIN_SECONDS_BETWEEN_CALLS since the previous call."""
+    elapsed = time.time() - _last_call_time[0]
+    if elapsed < _MIN_SECONDS_BETWEEN_CALLS:
+        time.sleep(_MIN_SECONDS_BETWEEN_CALLS - elapsed)
+    _last_call_time[0] = time.time()
 
 
 def _build_prompt(concept):
@@ -55,20 +70,38 @@ def generate_background(concept):
             "imageConfig": {"aspectRatio": "4:5"},
         },
     }
-    try:
-        resp = requests.post(
-            url,
-            headers={
-                "x-goog-api-key": config.GEMINI_API_KEY,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=90,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        print(f"  [warn] Gemini image request failed for '{concept}': {e}")
+
+    max_attempts = 4
+    data = None
+    for attempt in range(max_attempts):
+        _throttle()
+        try:
+            resp = requests.post(
+                url,
+                headers={
+                    "x-goog-api-key": config.GEMINI_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=90,
+            )
+            if resp.status_code == 429:
+                # Rate limited: wait longer each time before retrying.
+                wait = 20 * (attempt + 1)
+                print(f"  [warn] rate limited (429) on '{concept}', "
+                      f"waiting {wait}s then retrying ({attempt + 1}/{max_attempts})")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            break
+        except Exception as e:
+            print(f"  [warn] Gemini image request failed for '{concept}': {e}")
+            return None
+
+    if data is None:
+        print(f"  [warn] still rate limited after {max_attempts} attempts for '{concept}'; "
+              "falling back to solid background")
         return None
 
     # Walk the response parts for inline image data.
