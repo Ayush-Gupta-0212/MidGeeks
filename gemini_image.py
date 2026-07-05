@@ -48,7 +48,12 @@ def generate_background(concept):
     url = _ENDPOINT.format(model=config.GEMINI_IMAGE_MODEL)
     payload = {
         "contents": [{"parts": [{"text": _build_prompt(concept)}]}],
-        "generationConfig": {"responseModalities": ["IMAGE"]},
+        "generationConfig": {
+            # Must include TEXT — requesting IMAGE alone makes the whole
+            # response fail rather than returning image-only output.
+            "responseModalities": ["TEXT", "IMAGE"],
+            "imageConfig": {"aspectRatio": "4:5"},
+        },
     }
     try:
         resp = requests.post(
