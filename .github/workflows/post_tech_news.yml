@@ -24,7 +24,7 @@ on:
         description: "Use the instagrapi path instead of the official API"
         type: boolean
         default: false
-
+ 
 # Needed so the workflow can commit the generated slide images back to the
 # repo (that's what makes their raw.githubusercontent.com URL work).
 permissions:
