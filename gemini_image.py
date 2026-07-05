@@ -26,11 +26,17 @@ import config
 
 _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-# Free-tier image generation is capped at roughly 10 images/minute. We space
-# requests out and retry on 429 (rate limit) with growing backoff so a normal
-# 6-slide post stays comfortably under the limit instead of firing all at once.
-_MIN_SECONDS_BETWEEN_CALLS = 7
+# Free-tier image generation is rate-limited. We space requests out and retry
+# on 429, but with a HARD cap on total wait so a run can never hang for many
+# minutes. If we blow the cap, we give up on images and fall back to solid
+# backgrounds — a slow-but-finished run beats a stuck one.
+_MIN_SECONDS_BETWEEN_CALLS = 4
 _last_call_time = [0.0]
+
+# Once this many total seconds have been spent waiting on rate limits across
+# the whole run, stop retrying and just use fallbacks for the rest.
+_MAX_TOTAL_BACKOFF_SECONDS = 90
+_total_backoff_spent = [0.0]
 
 
 def _throttle():
@@ -66,12 +72,13 @@ def generate_background(concept):
         "generationConfig": {
             # Must include TEXT — requesting IMAGE alone makes the whole
             # response fail rather than returning image-only output.
+            # (We don't request a specific aspect ratio here — not all image
+            # models accept it, and we crop to 4:5 ourselves in _cover_fit.)
             "responseModalities": ["TEXT", "IMAGE"],
-            "imageConfig": {"aspectRatio": "4:5"},
         },
     }
 
-    max_attempts = 4
+    max_attempts = 3
     data = None
     for attempt in range(max_attempts):
         _throttle()
@@ -86,12 +93,35 @@ def generate_background(concept):
                 timeout=90,
             )
             if resp.status_code == 429:
-                # Rate limited: wait longer each time before retrying.
-                wait = 20 * (attempt + 1)
-                print(f"  [warn] rate limited (429) on '{concept}', "
-                      f"waiting {wait}s then retrying ({attempt + 1}/{max_attempts})")
+                # Print the exact quota that was exceeded — this tells us
+                # whether it's a per-minute limit (fixable by spacing) or a
+                # per-day limit (means we've used the day's free images).
+                try:
+                    err = resp.json().get("error", {})
+                    details = err.get("details", [])
+                    quota_info = ""
+                    for d in details:
+                        meta = d.get("metadata", {})
+                        if "quota_limit" in meta:
+                            quota_info = (f" [quota: {meta.get('quota_limit')} "
+                                          f"= {meta.get('quota_limit_value')}]")
+                    print(f"  [warn] rate limited (429) on '{concept}'{quota_info}")
+                except Exception:
+                    print(f"  [warn] rate limited (429) on '{concept}'")
+
+                # Respect the global backoff cap so we never hang.
+                if _total_backoff_spent[0] >= _MAX_TOTAL_BACKOFF_SECONDS:
+                    print("  [warn] hit total backoff cap; using solid backgrounds "
+                          "for remaining slides")
+                    return None
+                wait = min(15 * (attempt + 1),
+                           _MAX_TOTAL_BACKOFF_SECONDS - _total_backoff_spent[0])
+                if wait <= 0:
+                    return None
+                _total_backoff_spent[0] += wait
                 time.sleep(wait)
                 continue
+
             resp.raise_for_status()
             data = resp.json()
             break
@@ -100,8 +130,8 @@ def generate_background(concept):
             return None
 
     if data is None:
-        print(f"  [warn] still rate limited after {max_attempts} attempts for '{concept}'; "
-              "falling back to solid background")
+        print(f"  [warn] couldn't generate image for '{concept}' after "
+              f"{max_attempts} attempts; falling back to solid background")
         return None
 
     # Walk the response parts for inline image data.
