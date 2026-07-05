@@ -21,8 +21,21 @@ RSS_FEEDS = [
     {"name": "Hacker News", "url": "https://hnrss.org/frontpage?points=100"},
 ]
 
-# How many story slides to build (plus 1 cover + 1 outro = TOTAL_SLIDES + 2).
-# Instagram carousels max out at 10 items total, so keep this <= 8.
+# ---------------------------------------------------------------------------
+# POST FORMAT
+# "single" = one post covers ONE story in depth: a cover + several point
+#            slides (each a real key point pulled from the actual article)
+#            + an outro. This is the current mode.
+# "digest" = the older format (one slide per story across several stories).
+# ---------------------------------------------------------------------------
+POST_MODE = "single"
+
+# For single-story mode: how many "key point" slides to build between the
+# cover and the outro. Real points are extracted from the article text; if
+# the article yields fewer than this, we build fewer (never invent filler).
+MAX_POINT_SLIDES = 4
+
+# For digest mode only (kept for backwards compatibility):
 STORY_SLIDE_COUNT = 5
 
 # Relevance filter: a story must match at least one of these in title+summary
@@ -52,24 +65,20 @@ KEYWORD_ALLOWLIST = [
     "SpaceX", "Alibaba", "Samsung",
 ]
 
-# Used to pick a Pexels search term for each slide's background photo (see
-# generate_slides.py). Order matters — first matching concept wins. Keep this
-# in sync with what you actually cover; add rows as your beat expands.
-IMAGE_CONCEPT_MAP = [
-    (["ai", "artificial intelligence", "machine learning", "llm", "chatbot",
-      "generative", "neural network", "openai", "anthropic", "claude",
-      "gemini", "chatgpt", "copilot"], "artificial intelligence technology"),
-    (["chip", "semiconductor", "processor", "gpu", "cpu"], "computer chip technology"),
-    (["cybersecurity", "hack", "breach", "vulnerability", "malware", "encryption"],
-     "cybersecurity technology"),
-    (["cloud", "data center", "server", "database"], "data center server room"),
-    (["startup", "funding", "venture capital", "ipo", "acquisition"],
-     "startup office team"),
-    (["app", "smartphone", "phone"], "smartphone technology"),
-    (["code", "coding", "programming", "developer", "software", "github",
-      "open source"], "programmer coding screen"),
-]
-DEFAULT_IMAGE_QUERY = "technology abstract"
+# ---------------------------------------------------------------------------
+# GOOGLE GEMINI — used for two things:
+#   1. summarizing the REAL article text into genuine key points (text model)
+#   2. generating a background image per slide (image model)
+# One free API key from https://aistudio.google.com/apikey covers both.
+# Set as a GitHub Actions secret named GEMINI_API_KEY.
+# ---------------------------------------------------------------------------
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_TEXT_MODEL = "gemini-2.5-flash"          # summarize article -> key points
+GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"   # generate slide backgrounds
+
+# If image generation fails or the key is missing, fall back to a solid
+# dark background instead of breaking the run.
+IMAGE_FALLBACK_ENABLED = True
 
 # Stories are skipped if title+summary+link contains any of these — a light
 # default net against off-brand content (piracy-adjacent sites, movie/TV
@@ -95,20 +104,24 @@ HISTORY_FILE = "posted_history.json"
 HISTORY_MAX_AGE_DAYS = 30  # prune entries older than this so the file doesn't grow forever
 
 # ---------------------------------------------------------------------------
-# VISUAL DESIGN — each slide's background is a real photo (via Pexels, see
-# below), related to that slide's story. A dark scrim sits between the photo
-# and the text so it stays readable regardless of what's in the photo.
-# Palette: white text, one orange accent, black scrim — no other colors.
+# VISUAL DESIGN — AI-generated background per slide, with a dark tint that
+# gets DARKER toward the bottom so text stays readable. Theme: orange + white
+# text only, over the tinted image. No other colors.
 # ---------------------------------------------------------------------------
 CANVAS_SIZE = (1080, 1350)  # 4:5 — the tallest ratio Instagram allows in-feed
 
 COLORS = {
-    "bg": "#000000",       # fallback fill if a photo can't be fetched
-    "text": "#FFFFFF",     # white — primary text, on top of the scrim
-    "muted": "#D8D8D8",    # light grey — secondary text (deks, credits)
-    "accent": "#FF7A1A",   # orange — the one accent color, used sparingly
-    "scrim": (0, 0, 0),    # black — alpha varies by position, see _apply_scrim
+    "bg": "#0A0A0A",       # near-black fallback if an image can't be generated
+    "text": "#FFFFFF",     # white — primary text
+    "muted": "#EAEAEA",    # near-white — secondary text
+    "accent": "#FF6B00",   # orange — headlines, tags, accents
+    "scrim": (0, 0, 0),    # black tint, alpha varies (darker at bottom)
 }
+
+# Tint strength (0-255 alpha). Top of slide vs bottom of slide — the bottom
+# is much darker so headline text at the lower third stays crisp.
+SCRIM_ALPHA_TOP = 90
+SCRIM_ALPHA_BOTTOM = 225
 
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fonts")
 FONTS = {
@@ -118,13 +131,6 @@ FONTS = {
 }
 
 OUTPUT_DIR = "output"
-
-# ---------------------------------------------------------------------------
-# BACKGROUND PHOTOS — Pexels (free, instant API key, no article-photo
-# copyright concerns since Pexels' library is licensed for exactly this).
-# Get a key at https://www.pexels.com/api/ (sign up, key appears instantly).
-# ---------------------------------------------------------------------------
-PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 
 # The @handle shown in the small corner tag on every slide. Not a secret —
 # just edit this one line before you push. (CLI --handle, if passed to
