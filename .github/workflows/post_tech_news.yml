@@ -24,9 +24,9 @@ on:
         description: "Use the instagrapi path instead of the official API"
         type: boolean
         default: false
- 
-# Needed so the workflow can commit the generated slide images back to the
-# repo (that's what makes their raw.githubusercontent.com URL work).
+
+# Needed so the workflow can commit posted_history.json/todays_stories.json
+# back to the repo after each run (so the next run knows what's already posted).
 permissions:
   contents: write
 
@@ -51,24 +51,28 @@ jobs:
         run: python fetch_news.py
 
       - name: Generate slide images
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python generate_slides.py
 
-      - name: Commit generated slides
+      - name: Commit story history
         if: ${{ inputs.dry_run != true }}
         run: |
           git config user.name "tech-news-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add output/ posted_history.json todays_stories.json
-          git commit -m "Slides for $(date -u +'%Y-%m-%d')" || echo "nothing to commit"
+          git add posted_history.json todays_stories.json
+          git commit -m "History update for $(date -u +'%Y-%m-%d')" || echo "nothing to commit"
           git push
 
-      # Images are now live on raw.githubusercontent.com (repo must be public)
+      # Images are uploaded to Imgur here, so this works with a PRIVATE repo —
+      # nothing about your code or output needs to be publicly visible.
       - name: Post to Instagram (official Graph API)
         if: ${{ inputs.dry_run != true && inputs.unofficial != true }}
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          IMAGE_HOST_MODE: github
+          IMAGE_HOST_MODE: imgur
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: python post_instagram_official.py
 
       - name: Post to Instagram (unofficial instagrapi path)
