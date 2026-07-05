@@ -74,7 +74,10 @@ KEYWORD_ALLOWLIST = [
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_TEXT_MODEL = "gemini-2.5-flash"          # summarize article -> key points
-GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image-preview"   # generate slide backgrounds
+# Use the 2.5 image model: it's the one with a documented FREE API tier
+# (~500 requests/day). The newer 3.x "-preview" image models often have no
+# free API quota at all, which returns 429 on the very first call.
+GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
 
 # If image generation fails or the key is missing, fall back to a solid
 # dark background instead of breaking the run.
