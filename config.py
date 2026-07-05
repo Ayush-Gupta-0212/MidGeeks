@@ -87,7 +87,7 @@ KEYWORD_BLOCKLIST = [
 # Hours to add to UTC for the date printed on the cover slide (does NOT
 # affect the cron schedule in the workflow, which is always UTC).
 # 0 = UTC, 5.5 = India (IST), -5 = US Eastern, etc.
-DISPLAY_TIMEZONE_OFFSET_HOURS = 0
+DISPLAY_TIMEZONE_OFFSET_HOURS = 5.5
 
 # File that remembers which article URLs we've already posted, so the bot
 # never repeats a story. Committed back to the repo after every run.
