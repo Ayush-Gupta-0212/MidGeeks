@@ -129,7 +129,7 @@ PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 # The @handle shown in the small corner tag on every slide. Not a secret —
 # just edit this one line before you push. (CLI --handle, if passed to
 # run_pipeline.py, overrides this for a one-off local run.)
-IG_HANDLE = "@yourhandle"
+IG_HANDLE = "@midgeeks.studio"
 
 # ---------------------------------------------------------------------------
 # INSTAGRAM — OFFICIAL GRAPH API (recommended path)
