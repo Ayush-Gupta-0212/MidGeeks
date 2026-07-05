@@ -93,34 +93,13 @@ def generate_background(concept):
                 timeout=90,
             )
             if resp.status_code == 429:
-                # Print the exact quota that was exceeded — this tells us
-                # whether it's a per-minute limit (fixable by spacing) or a
-                # per-day limit (means we've used the day's free images).
-                try:
-                    err = resp.json().get("error", {})
-                    details = err.get("details", [])
-                    quota_info = ""
-                    for d in details:
-                        meta = d.get("metadata", {})
-                        if "quota_limit" in meta:
-                            quota_info = (f" [quota: {meta.get('quota_limit')} "
-                                          f"= {meta.get('quota_limit_value')}]")
-                    print(f"  [warn] rate limited (429) on '{concept}'{quota_info}")
-                except Exception:
-                    print(f"  [warn] rate limited (429) on '{concept}'")
-
-                # Respect the global backoff cap so we never hang.
-                if _total_backoff_spent[0] >= _MAX_TOTAL_BACKOFF_SECONDS:
-                    print("  [warn] hit total backoff cap; using solid backgrounds "
-                          "for remaining slides")
-                    return None
-                wait = min(15 * (attempt + 1),
-                           _MAX_TOTAL_BACKOFF_SECONDS - _total_backoff_spent[0])
-                if wait <= 0:
-                    return None
-                _total_backoff_spent[0] += wait
-                time.sleep(wait)
-                continue
+                # DIAGNOSTIC: print the entire raw response body verbatim, so we
+                # can see exactly what Google says (quota name, whether it's
+                # per-minute or per-day, or a billing precondition), then bail
+                # immediately — no point waiting through backoffs when we're
+                # just trying to read the error.
+                print(f"  [429-RAW] for '{concept}': {resp.text[:900]}")
+                return None
 
             resp.raise_for_status()
             data = resp.json()
