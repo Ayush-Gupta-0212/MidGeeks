@@ -2,11 +2,10 @@ name: Post Tech News Carousel
 
 # Two ways this runs:
 #  1. schedule  -> fully automatic, twice a day at the times below (UTC)
-#  2. workflow_dispatch -> the manual "Run workflow" button on the Actions
-#     tab (also usable from the GitHub mobile app = a single tap trigger)
+#  2. workflow_dispatch -> the manual "Run workflow" button on the Actions tab
 #
 # GitHub Actions cron is always UTC, regardless of DISPLAY_TIMEZONE_OFFSET_HOURS
-# in config.py (that setting only affects the date printed on the slide).
+# in config.py (that only affects the date printed on a slide).
 # IST is UTC+5:30, so:
 #   9:00 AM IST  = 3:30 AM UTC  -> "30 3 * * *"
 #   6:00 PM IST  = 12:30 PM UTC -> "30 12 * * *"
@@ -17,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Generate slides only, don't post to Instagram"
+        description: "Build slides only, don't post to Instagram"
         type: boolean
         default: false
       unofficial:
@@ -25,8 +24,8 @@ on:
         type: boolean
         default: false
 
-# Needed so the workflow can commit posted_history.json/todays_stories.json
-# back to the repo after each run (so the next run knows what's already posted).
+# Needed so the workflow can commit posted_history.json back to the repo
+# after each run (so the next run knows what's already been posted).
 permissions:
   contents: write
 
@@ -47,40 +46,32 @@ jobs:
           pip install -r requirements.txt
           if [ "${{ inputs.unofficial }}" = "true" ]; then pip install instagrapi; fi
 
-      - name: Fetch today's stories
-        run: python fetch_news.py
-
-      - name: Generate slide images
+      # One step runs the whole flow: pick story -> fetch real article text ->
+      # summarize into points (Gemini) -> generate slides (Gemini images) ->
+      # post -> mark posted. Ordering is handled inside run_pipeline.py.
+      - name: Run pipeline
         env:
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        run: python generate_slides.py
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+          IMAGE_HOST_MODE: imgur
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "${{ inputs.unofficial }}" = "true" ]; then ARGS="$ARGS --unofficial"; fi
+          python run_pipeline.py $ARGS
 
       - name: Commit story history
         if: ${{ inputs.dry_run != true }}
         run: |
           git config user.name "tech-news-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add posted_history.json todays_stories.json
+          git add posted_history.json todays_story.json
           git commit -m "History update for $(date -u +'%Y-%m-%d')" || echo "nothing to commit"
-          git push
-
-      # Images are uploaded to Imgur here, so this works with a PRIVATE repo —
-      # nothing about your code or output needs to be publicly visible.
-      - name: Post to Instagram (official Graph API)
-        if: ${{ inputs.dry_run != true && inputs.unofficial != true }}
-        env:
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          IMAGE_HOST_MODE: imgur
-          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
-        run: python post_instagram_official.py
-
-      - name: Post to Instagram (unofficial instagrapi path)
-        if: ${{ inputs.dry_run != true && inputs.unofficial == true }}
-        env:
-          IG_USERNAME: ${{ secrets.IG_USERNAME }}
-          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
-        run: python post_instagram_unofficial.py
+          git push || echo "nothing to push"
 
       - name: Upload slides as a workflow artifact
         uses: actions/upload-artifact@v4
