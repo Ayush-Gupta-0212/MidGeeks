@@ -150,6 +150,22 @@ def pick_todays_stories(count=None):
     return picked
 
 
+def pick_top_story():
+    """Single-story mode: return the single freshest unposted story (without
+    marking it posted yet — the caller marks it only once slides succeed, so a
+    failed run doesn't 'use up' the story). Returns a dict or None."""
+    candidates = fetch_candidates()
+    return candidates[0] if candidates else None
+
+
+def mark_posted(story):
+    """Record a story as posted so it never repeats. Call this only after a
+    post actually succeeds."""
+    history = load_history()
+    history[story["link"]] = datetime.now(timezone.utc).isoformat()
+    save_history(history)
+
+
 if __name__ == "__main__":
     stories = pick_todays_stories()
     print(f"Selected {len(stories)} stories:\n")
