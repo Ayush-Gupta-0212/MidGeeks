@@ -1,41 +1,30 @@
 """
 generate_slides.py
-Turns a list of stories into a set of 1080x1350 JPEG carousel slides:
-  01_cover.jpg -> one slide per story -> NN_outro.jpg
+Single-story mode: builds one carousel about ONE news story:
+  01_cover.jpg  -> a curiosity-driven cover (headline + "swipe to see why")
+  NN_point.jpg  -> one slide per REAL key point (heading + detail)
+  NN_outro.jpg  -> follow CTA + source credit
 
-Design: each slide's background is a real photo, thematically matched to
-that slide's story via Pexels (see config.IMAGE_CONCEPT_MAP). A dark scrim
-sits between the photo and the text so it stays legible regardless of what's
-in the photo. Palette is deliberately just three colors: white text, one
-orange accent, black scrim/stroke — nothing else.
+Design (per user spec):
+  - Background: AI-generated image per slide (Gemini), dark & cinematic.
+  - Dark tint over the image, DARKER toward the bottom, so text stays readable.
+  - Text theme: orange + white only. Headlines/tags orange, body white.
+  - Layout tuned to make people curious: the cover teases, points deliver.
 
-Instagram's Graph API only accepts JPEG (no PNG), and crops every slide in
-a carousel to match slide 1's aspect ratio — so every slide here is
-rendered at the exact same CANVAS_SIZE.
+Falls back to a solid dark background if image generation is unavailable, so
+the pipeline never breaks on an image failure.
 """
 
 import os
-import random
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from io import BytesIO
 
-import requests
 from PIL import Image, ImageDraw, ImageFont
 
 import config
+import gemini_image
 
 W, H = config.CANVAS_SIZE
-MARGIN = 84
-
-# Randomized once per run so the same concept ("AI") doesn't always return
-# the same top photo day after day. Combined with a per-slide variant index,
-# this gives every slide a distinct background.
-_RUN_PHOTO_OFFSET = random.randint(0, 12)
-
-# Tracks how many times each concept-query has been used so far this run, so
-# the Nth slide sharing a concept asks for the Nth photo, not the same one.
-_query_use_count = defaultdict(int)
+MARGIN = 90
 
 
 def _font(name, size):
@@ -48,7 +37,6 @@ def _text_width(draw, text, font):
 
 
 def _wrap_to_width(draw, text, font, max_width):
-    """Greedy word-wrap using actual glyph widths (not character counts)."""
     words = text.split()
     lines, current = [], ""
     for word in words:
@@ -64,314 +52,212 @@ def _wrap_to_width(draw, text, font, max_width):
     return lines
 
 
-def _autosize_headline(draw, text, max_width, max_lines, start_size, min_size):
-    """Shrinks the headline font until it wraps within max_lines at max_width."""
+def _autosize(draw, text, font_name, max_width, max_lines, start_size, min_size):
     size = start_size
     while size >= min_size:
-        font = _font("headline", size)
+        font = _font(font_name, size)
         lines = _wrap_to_width(draw, text, font, max_width)
         if len(lines) <= max_lines:
             return font, lines
-        size -= 4
-    font = _font("headline", min_size)
-    lines = _wrap_to_width(draw, text, font, max_width)
-    if len(lines) > max_lines:
-        lines = lines[:max_lines]
-        lines[-1] = lines[-1].rstrip(".") + "…"
+        size -= 3
+    font = _font(font_name, min_size)
+    lines = _wrap_to_width(draw, text, font, max_width)[:max_lines]
     return font, lines
 
 
 # ---------------------------------------------------------------------------
-# Background photo: pick a concept -> search Pexels -> download -> cover-fit
+# Background + tint
 # ---------------------------------------------------------------------------
 
-def _pick_image_query(story):
-    haystack = f"{story.get('title', '')} {story.get('summary', '')}".lower()
-    for keywords, query in config.IMAGE_CONCEPT_MAP:
-        if any(k in haystack for k in keywords):
-            return query
-    return config.DEFAULT_IMAGE_QUERY
-
-
-def _fetch_pexels_photo(query, variant=0):
-    """Returns (image_url, photographer_credit) or (None, None) on any failure.
-    `variant` picks a different photo from the result set so two slides that
-    resolve to the same concept don't get the identical image. A per-run
-    random offset also means the same concept looks different across days."""
-    if not config.PEXELS_API_KEY:
-        print("  [warn] PEXELS_API_KEY not set, using solid-color background")
-        return None, None
-    try:
-        resp = requests.get(
-            "https://api.pexels.com/v1/search",
-            headers={"Authorization": config.PEXELS_API_KEY},
-            params={"query": query, "orientation": "portrait", "size": "large", "per_page": 30},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        photos = resp.json().get("photos", [])
-        if not photos:
-            print(f"  [warn] no Pexels results for '{query}'")
-            return None, None
-        idx = (variant + _RUN_PHOTO_OFFSET) % len(photos)
-        photo = photos[idx]
-        url = photo["src"].get("large2x") or photo["src"].get("original")
-        return url, photo.get("photographer", "")
-    except Exception as e:
-        print(f"  [warn] Pexels search failed for '{query}': {e}")
-        return None, None
-
-
-def _cover_fit(img, target_w, target_h):
-    """Resize + center-crop so img fully covers target_w x target_h,
-    like CSS object-fit: cover. Never distorts aspect ratio."""
-    src_w, src_h = img.size
-    src_ratio = src_w / src_h
-    target_ratio = target_w / target_h
-    if src_ratio > target_ratio:
-        new_h = target_h
-        new_w = max(target_w, int(round(new_h * src_ratio)))
+def _cover_fit(img, tw, th):
+    sw, sh = img.size
+    sr, tr = sw / sh, tw / th
+    if sr > tr:
+        nh = th
+        nw = max(tw, int(round(nh * sr)))
     else:
-        new_w = target_w
-        new_h = max(target_h, int(round(new_w / src_ratio)))
-    img = img.resize((new_w, new_h), Image.LANCZOS)
-    left = (new_w - target_w) // 2
-    top = (new_h - target_h) // 2
-    return img.crop((left, top, left + target_w, top + target_h))
+        nw = tw
+        nh = max(th, int(round(nw / sr)))
+    img = img.resize((nw, nh), Image.LANCZOS)
+    left = (nw - tw) // 2
+    top = (nh - th) // 2
+    return img.crop((left, top, left + tw, top + th))
 
 
-def _background_image(query):
-    """Returns (PIL Image sized exactly WxH, photographer_credit_or_None).
-    Uses a per-concept counter so repeated concepts get different photos.
-    Falls back to a solid color on any failure — a missing/failed photo
-    should never break the pipeline."""
-    variant = _query_use_count[query]
-    _query_use_count[query] += 1
-    url, credit = _fetch_pexels_photo(query, variant=variant)
-    if not url:
-        return Image.new("RGB", (W, H), config.COLORS["bg"]), None
-    try:
-        resp = requests.get(url, timeout=20)
-        resp.raise_for_status()
-        photo = Image.open(BytesIO(resp.content)).convert("RGB")
-        return _cover_fit(photo, W, H), credit
-    except Exception as e:
-        print(f"  [warn] couldn't download background photo: {e}")
-        return Image.new("RGB", (W, H), config.COLORS["bg"]), None
+def _background(concept):
+    """AI image if available, else solid dark fallback."""
+    img = gemini_image.generate_background(concept)
+    if img is None:
+        return Image.new("RGB", (W, H), config.COLORS["bg"])
+    return _cover_fit(img, W, H)
 
 
-def _apply_scrim(img):
-    """Techy, sharp scrim built from three parts, composited over the photo:
-      1. a left-to-right gradient (dark on the left where text lives, clear
-         on the right so the photo still shows),
-      2. a solid darker band anchored along the very bottom (footer zone),
-      3. a lighter top band (eyebrow zone).
-    This keeps left-aligned white/orange text crisp while letting the right
-    side of every photo breathe — a more designed look than a flat overlay."""
+def _apply_tint(img):
+    """Black tint whose opacity ramps from SCRIM_ALPHA_TOP at the top to
+    SCRIM_ALPHA_BOTTOM at the bottom — darker at the bottom, as specified,
+    so lower-third text stays legible."""
     img = img.convert("RGBA")
-
-    # 1. horizontal gradient: strong on the left, fading right
-    h_grad = Image.new("L", (W, 1))
-    for x in range(W):
-        frac = x / W
-        if frac < 0.62:
-            alpha = 205 - int((frac / 0.62) * 70)   # 205 -> 135
-        else:
-            alpha = 135 - int(((frac - 0.62) / 0.38) * 95)  # 135 -> 40
-        h_grad.putpixel((x, 0), max(0, alpha))
-    h_grad = h_grad.resize((W, H))
-
-    # 2 + 3. vertical emphasis: darker top & bottom anchor bands
-    v_grad = Image.new("L", (1, H))
+    grad = Image.new("L", (1, H))
+    top = config.SCRIM_ALPHA_TOP
+    bot = config.SCRIM_ALPHA_BOTTOM
     for y in range(H):
         frac = y / H
-        if frac < 0.16:
-            a = 70 - int((frac / 0.16) * 70)         # 70 -> 0
-        elif frac > 0.80:
-            a = int(((frac - 0.80) / 0.20) * 90)     # 0 -> 90
-        else:
-            a = 0
-        v_grad.putpixel((0, y), a)
-    v_grad = v_grad.resize((W, H))
-
-    from PIL import ImageChops
-    combined = ImageChops.add(h_grad, v_grad)
-
-    scrim = Image.new("RGBA", (W, H), config.COLORS["scrim"] + (0,))
-    scrim.putalpha(combined)
-    return Image.alpha_composite(img, scrim).convert("RGB")
+        # ease-in so most of the darkening happens in the lower half
+        eased = frac ** 1.4
+        grad.putpixel((0, y), int(top + (bot - top) * eased))
+    grad = grad.resize((W, H))
+    tint = Image.new("RGBA", (W, H), config.COLORS["scrim"] + (0,))
+    tint.putalpha(grad)
+    return Image.alpha_composite(img, tint).convert("RGB")
 
 
-def _new_canvas(query):
-    bg, credit = _background_image(query)
-    bg = _apply_scrim(bg)
-    return bg, ImageDraw.Draw(bg), credit
+def _canvas(concept):
+    bg = _apply_tint(_background(concept))
+    return bg, ImageDraw.Draw(bg)
 
 
 # ---------------------------------------------------------------------------
-# Drawing helpers — every piece of text gets a thin black stroke, on top of
-# the scrim, as a second layer of legibility insurance over busy photos.
+# Shared drawing pieces
 # ---------------------------------------------------------------------------
 
-def _draw_text(draw, xy, text, font, fill, stroke_width=3):
-    draw.text(xy, text, font=font, fill=fill, stroke_width=stroke_width, stroke_fill="black")
+def _draw_text(draw, xy, text, font, fill, stroke=3):
+    draw.text(xy, text, font=font, fill=fill, stroke_width=stroke, stroke_fill="black")
 
 
-def _draw_accent_bar(draw, x, y_top, y_bottom, width=8):
-    """A solid orange vertical bar — the signature 'sharp' accent that sits
-    just left of the headline block."""
-    draw.rectangle([x, y_top, x + width, y_bottom], fill=config.COLORS["accent"])
+def _accent_bar(draw, x, y0, y1, w=9):
+    draw.rectangle([x, y0, x + w, y1], fill=config.COLORS["accent"])
 
 
-def _draw_hairline(draw, y, x0=MARGIN, x1=W - MARGIN, color=None):
-    draw.line([(x0, y), (x1, y)], fill=color or config.COLORS["accent"], width=2)
+def _header(draw, label):
+    y = 150
+    draw.rectangle([MARGIN, y, MARGIN + 40, y + 7], fill=config.COLORS["accent"])
+    f = _font("mono", 27)
+    _draw_text(draw, (MARGIN + 56, y - 11), label, f, config.COLORS["accent"], stroke=2)
 
 
-def _draw_header(draw, label):
-    """Top-left eyebrow with a short orange tick before it and a hairline
-    rule under it — clean, technical, consistent across every slide."""
-    tick_y = 156
-    draw.rectangle([MARGIN, tick_y, MARGIN + 34, tick_y + 6], fill=config.COLORS["accent"])
-    mono = _font("mono", 27)
-    _draw_text(draw, (MARGIN + 48, tick_y - 12), label, mono, config.COLORS["text"], stroke_width=2)
-
-
-def _draw_footer(draw, index, total, handle):
-    """Hairline rule, then index on the left and handle on the right below it."""
-    rule_y = H - 118
-    _draw_hairline(draw, rule_y, color=(255, 255, 255))
-    mono = _font("mono", 24)
+def _footer(draw, index, total, handle):
+    y = H - 116
+    draw.line([(MARGIN, y), (W - MARGIN, y)], fill=(255, 255, 255), width=2)
+    f = _font("mono", 24)
     tag = f"{index:02d} / {total:02d}"
-    _draw_text(draw, (MARGIN, rule_y + 22), tag, mono, config.COLORS["accent"], stroke_width=2)
-    hw = _text_width(draw, handle, mono)
-    _draw_text(draw, (W - MARGIN - hw, rule_y + 22), handle, mono, config.COLORS["text"], stroke_width=2)
-
-
-def _draw_content_block(draw, blocks, region_top, region_bottom):
-    """Vertically centers a list of (lines, font, color, line_height, gap_after,
-    stroke_width) blocks inside [region_top, region_bottom]."""
-    total_h = 0
-    for lines, _font_, _color, line_h, gap_after, _stroke in blocks:
-        total_h += len(lines) * line_h + gap_after
-    y = region_top + max(0, (region_bottom - region_top - total_h) // 2)
-    for lines, font, color, line_h, gap_after, stroke in blocks:
-        for line in lines:
-            _draw_text(draw, (MARGIN, y), line, font, color, stroke_width=stroke)
-            y += line_h
-        y += gap_after
+    _draw_text(draw, (MARGIN, y + 24), tag, f, config.COLORS["accent"], stroke=2)
+    hw = _text_width(draw, handle, f)
+    _draw_text(draw, (W - MARGIN - hw, y + 24), handle, f, config.COLORS["text"], stroke=2)
 
 
 # ---------------------------------------------------------------------------
 # Slide renderers
 # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# Slide renderers — new "techy & sharp" layout:
-#   header (tick + eyebrow)  ...  photo ...  orange accent bar + big headline
-#   anchored toward the lower third, footer hairline + index/handle.
-# ---------------------------------------------------------------------------
+def render_cover(story, total, handle, concept):
+    img, draw = _canvas(concept)
+    _header(draw, "TECH SIGNAL")
 
-def _draw_headline_block(draw, lines, headline_font, bottom_y, tag=None):
-    """Draws the headline bottom-anchored (last line sits at bottom_y),
-    with an orange accent bar running the full height of the block on the
-    left, and an optional small orange topic tag above it."""
-    line_h = int(headline_font.size * 1.16)
+    # Curiosity kicker in orange, then the headline big in white, anchored low.
+    kicker_font = _font("mono", 30)
+    headline_font, lines = _autosize(
+        draw, story["title"], "headline", W - 2 * MARGIN - 28, 6, 82, 46
+    )
+    line_h = int(headline_font.size * 1.14)
     block_h = len(lines) * line_h
+    bottom_y = H - 250
     top_y = bottom_y - block_h
 
-    tag_h = 0
-    if tag:
-        tag_font = _font("mono", 26)
-        tag_h = 48
-        _draw_text(draw, (MARGIN + 26, top_y - tag_h), tag.upper(), tag_font,
-                   config.COLORS["accent"], stroke_width=2)
-
-    _draw_accent_bar(draw, MARGIN, top_y - (tag_h if tag else 0) + (6 if tag else 0), bottom_y, width=8)
+    _draw_text(draw, (MARGIN + 28, top_y - 58), "HERE'S WHY IT MATTERS", kicker_font,
+               config.COLORS["accent"], stroke=2)
+    _accent_bar(draw, MARGIN, top_y - 8, bottom_y)
 
     y = top_y
     for line in lines:
-        _draw_text(draw, (MARGIN + 26, y), line, headline_font, config.COLORS["text"], stroke_width=4)
+        _draw_text(draw, (MARGIN + 28, y), line, headline_font, config.COLORS["text"], stroke=4)
         y += line_h
 
-
-def _topic_tag(query):
-    """Turn the Pexels concept query into a short human tag for the slide."""
-    mapping = {
-        "artificial intelligence technology": "AI",
-        "computer chip technology": "HARDWARE",
-        "cybersecurity technology": "SECURITY",
-        "data center server room": "INFRASTRUCTURE",
-        "startup office team": "STARTUPS",
-        "smartphone technology": "MOBILE",
-        "programmer coding screen": "SOFTWARE",
-        "technology abstract": "TECH",
-    }
-    return mapping.get(query, "TECH")
-
-
-def render_cover(story_count, date_str, handle, query):
-    img, draw, credit = _new_canvas(query)
-    _draw_header(draw, "TECH SIGNAL")
-
-    noun = "headline" if story_count == 1 else "headlines"
-    headline_font, lines = _autosize_headline(
-        draw, f"{story_count} {noun} you missed today", W - 2 * MARGIN - 26, 4, 100, 62
-    )
-    _draw_headline_block(draw, lines, headline_font, bottom_y=H - 320, tag=None)
-
-    sub_font = _font("body", 34)
-    _draw_text(draw, (MARGIN + 26, H - 300), date_str, sub_font, config.COLORS["muted"], stroke_width=3)
-
     swipe_font = _font("mono", 28)
-    _draw_text(draw, (MARGIN + 26, H - 200), "SWIPE →", swipe_font, config.COLORS["accent"], stroke_width=2)
+    _draw_text(draw, (MARGIN + 28, H - 190), "SWIPE TO SEE →", swipe_font,
+               config.COLORS["accent"], stroke=2)
 
-    _draw_footer(draw, 1, story_count + 2, handle)
-    return img, credit
-
-
-def render_story(story, index, total, handle):
-    query = _pick_image_query(story)
-    img, draw, credit = _new_canvas(query)
-    _draw_header(draw, f"SOURCE: {story['source'].upper()}")
-
-    headline_font, lines = _autosize_headline(
-        draw, story["title"], W - 2 * MARGIN - 26, 6, 74, 46
-    )
-    _draw_headline_block(draw, lines, headline_font, bottom_y=H - 190, tag=_topic_tag(query))
-
-    _draw_footer(draw, index, total, handle)
-    return img, credit
-
-
-def render_outro(sources, handle, total, photo_credits):
-    img, draw, credit = _new_canvas(config.DEFAULT_IMAGE_QUERY)
-    if credit:
-        photo_credits.append(credit)
-    _draw_header(draw, "END OF SIGNAL")
-
-    headline_font, lines = _autosize_headline(
-        draw, "Follow for tomorrow's headlines", W - 2 * MARGIN - 26, 4, 84, 52
-    )
-    _draw_headline_block(draw, lines, headline_font, bottom_y=H - 330, tag=None)
-
-    body_font = _font("body", 26)
-    y = H - 300
-    credit_line = "Sources: " + ", ".join(sorted(set(sources)))
-    for line in _wrap_to_width(draw, credit_line, body_font, W - 2 * MARGIN - 26):
-        _draw_text(draw, (MARGIN + 26, y), line, body_font, config.COLORS["muted"], stroke_width=3)
-        y += int(body_font.size * 1.4)
-    if photo_credits:
-        names = ", ".join(sorted(set(photo_credits)))
-        y += 6
-        for line in _wrap_to_width(draw, f"Photos: {names} via Pexels", body_font, W - 2 * MARGIN - 26):
-            _draw_text(draw, (MARGIN + 26, y), line, body_font, config.COLORS["muted"], stroke_width=3)
-            y += int(body_font.size * 1.4)
-
-    _draw_footer(draw, total, total, handle)
+    _footer(draw, 1, total, handle)
     return img
 
 
-def generate(stories, handle=None, out_dir=None):
+def render_point(point, index, total, handle, concept, number):
+    img, draw = _canvas(concept)
+    _header(draw, f"POINT {number}")
+
+    heading_font, h_lines = _autosize(
+        draw, point["heading"], "headline", W - 2 * MARGIN - 28, 3, 76, 44
+    )
+    detail_font = _font("body", 34)
+    d_lines = _wrap_to_width(draw, point["detail"], detail_font, W - 2 * MARGIN - 28)
+
+    h_lh = int(heading_font.size * 1.14)
+    d_lh = int(detail_font.size * 1.34)
+    gap = 28
+    block_h = len(h_lines) * h_lh + gap + len(d_lines) * d_lh
+    bottom_y = H - 200
+    top_y = bottom_y - block_h
+
+    _accent_bar(draw, MARGIN, top_y - 4, top_y + len(h_lines) * h_lh)
+
+    y = top_y
+    for line in h_lines:
+        _draw_text(draw, (MARGIN + 28, y), line, heading_font, config.COLORS["accent"], stroke=4)
+        y += h_lh
+    y += gap
+    for line in d_lines:
+        _draw_text(draw, (MARGIN + 28, y), line, detail_font, config.COLORS["text"], stroke=3)
+        y += d_lh
+
+    _footer(draw, index, total, handle)
+    return img
+
+
+def render_outro(story, total, handle, concept):
+    img, draw = _canvas(concept)
+    _header(draw, "THE TAKEAWAY")
+
+    headline_font, lines = _autosize(
+        draw, "Follow for tomorrow's top tech story", "headline",
+        W - 2 * MARGIN - 28, 4, 78, 48
+    )
+    line_h = int(headline_font.size * 1.16)
+    block_h = len(lines) * line_h
+    bottom_y = H - 300
+    top_y = bottom_y - block_h
+
+    _accent_bar(draw, MARGIN, top_y - 8, bottom_y)
+    y = top_y
+    for line in lines:
+        _draw_text(draw, (MARGIN + 28, y), line, headline_font, config.COLORS["text"], stroke=4)
+        y += line_h
+
+    src_font = _font("body", 28)
+    _draw_text(draw, (MARGIN + 28, H - 280), f"Source: {story['source']}", src_font,
+               config.COLORS["muted"], stroke=3)
+    _draw_text(draw, (MARGIN + 28, H - 240), "Images: AI-generated", src_font,
+               config.COLORS["muted"], stroke=3)
+
+    _footer(draw, total, total, handle)
+    return img
+
+
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
+
+def _concept_for(story, point=None):
+    """Short visual concept for the background image of a slide. Uses the
+    story title (and point heading, if any) so each slide's image relates to
+    that slide's content."""
+    base = story.get("title", "technology")
+    if point:
+        return f"{base}; focus: {point['heading']}"
+    return base
+
+
+def generate_single(story, points, handle=None, out_dir=None):
+    """Build a one-story carousel. `points` is the list of real key points
+    from article_points.build_points()."""
     handle = handle or config.IG_HANDLE
     out_dir = out_dir or config.OUTPUT_DIR
     os.makedirs(out_dir, exist_ok=True)
@@ -379,29 +265,24 @@ def generate(stories, handle=None, out_dir=None):
         if f.lower().endswith(".jpg"):
             os.remove(os.path.join(out_dir, f))
 
-    total = len(stories) + 2
-    display_time = datetime.now(timezone.utc) + timedelta(hours=config.DISPLAY_TIMEZONE_OFFSET_HOURS)
-    date_str = display_time.strftime("%B %-d, %Y") if os.name != "nt" else display_time.strftime("%B %d, %Y")
+    total = len(points) + 2  # cover + points + outro
     paths = []
-    photo_credits = []
 
-    cover_query = _pick_image_query(stories[0]) if stories else config.DEFAULT_IMAGE_QUERY
-    cover, credit = render_cover(len(stories), date_str, handle, cover_query)
-    if credit:
-        photo_credits.append(credit)
+    cover = render_cover(story, total, handle, _concept_for(story))
     p = os.path.join(out_dir, "01_cover.jpg")
     cover.save(p, "JPEG", quality=92)
     paths.append(p)
 
-    for i, story in enumerate(stories, start=2):
-        img, credit = render_story(story, i, total, handle)
-        if credit:
-            photo_credits.append(credit)
-        p = os.path.join(out_dir, f"{i:02d}_story.jpg")
+    for i, point in enumerate(points):
+        slide_index = i + 2
+        number = i + 1
+        img = render_point(point, slide_index, total, handle,
+                           _concept_for(story, point), number)
+        p = os.path.join(out_dir, f"{slide_index:02d}_point.jpg")
         img.save(p, "JPEG", quality=92)
         paths.append(p)
 
-    outro = render_outro([s["source"] for s in stories], handle, total, photo_credits)
+    outro = render_outro(story, total, handle, _concept_for(story))
     p = os.path.join(out_dir, f"{total:02d}_outro.jpg")
     outro.save(p, "JPEG", quality=92)
     paths.append(p)
@@ -412,32 +293,23 @@ def generate(stories, handle=None, out_dir=None):
 if __name__ == "__main__":
     import json
 
-    if os.path.exists("todays_stories.json"):
-        with open("todays_stories.json", "r", encoding="utf-8") as f:
-            stories = json.load(f)
+    if os.path.exists("todays_story.json"):
+        with open("todays_story.json", "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        story, points = payload["story"], payload["points"]
     else:
-        stories = [
-            {
-                "source": "TechCrunch",
-                "title": "Startup raises $40M to build AI agents that actually finish tasks",
-                "summary": "The round values the company at $300M as enterprise demand for autonomous agents accelerates.",
-                "link": "https://example.com/1",
-            },
-            {
-                "source": "The Verge",
-                "title": "The next generation of foldable phones ditches the crease for good",
-                "summary": "New hinge designs from three manufacturers promise a flat, seamless display.",
-                "link": "https://example.com/2",
-            },
-            {
-                "source": "Ars Technica",
-                "title": "Researchers find a way to cut chip power use by 40 percent",
-                "summary": "The technique works with existing manufacturing processes, no new fabs required.",
-                "link": "https://example.com/3",
-            },
+        story = {
+            "source": "TechCrunch",
+            "title": "Nvidia unveils its next-gen AI chip with double the memory bandwidth",
+            "link": "https://example.com/1",
+        }
+        points = [
+            {"heading": "Double the bandwidth", "detail": "The new chip doubles memory bandwidth over the previous generation, per the announcement."},
+            {"heading": "Ships in Q3", "detail": "Availability is slated for the third quarter, with pricing not yet disclosed."},
+            {"heading": "Pressure on rivals", "detail": "Analysts say the launch raises the bar for competing accelerator makers."},
         ]
 
-    output_paths = generate(stories)
+    out = generate_single(story, points, handle="@midgeeks.studio")
     print("Generated:")
-    for p in output_paths:
+    for p in out:
         print(" ", p)
