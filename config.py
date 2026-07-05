@@ -74,7 +74,7 @@ KEYWORD_ALLOWLIST = [
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_TEXT_MODEL = "gemini-2.5-flash"          # summarize article -> key points
-GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"   # generate slide backgrounds
+GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image-preview"   # generate slide backgrounds
 
 # If image generation fails or the key is missing, fall back to a solid
 # dark background instead of breaking the run.
