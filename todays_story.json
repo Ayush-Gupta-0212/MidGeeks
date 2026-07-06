@@ -1,0 +1,27 @@
+{
+  "story": {
+    "source": "TechCrunch",
+    "title": "This humanoid robotics company is going public, but its CEO isn\u2019t promising a robot in your home anytime soon",
+    "summary": "While other humanoid startups chase sky-high valuations, Agility Robotics is betting its future on execution \u2014 and a SPAC.",
+    "link": "https://techcrunch.com/2026/07/05/this-humanoid-robotics-company-is-going-public-but-its-ceo-isnt-promising-a-robot-in-your-home-anytime-soon/",
+    "timestamp": 1783317929.0
+  },
+  "points": [
+    {
+      "heading": "Agility Robotics Goes Public",
+      "detail": "Agility Robotics will go public via a SPAC, valuing it at $2.5 billion and raising over $620 million, a robotics record."
+    },
+    {
+      "heading": "Targeting Warehouses, Factories",
+      "detail": "Agility's Digit robot is designed for moving heavy objects in warehouses and factories, optimized for industrial spaces."
+    },
+    {
+      "heading": "Strong Revenue Pipeline",
+      "detail": "Agility has over $300 million in booked, multi-year revenue for about 1,000 robots via a robots-as-a-service model."
+    },
+    {
+      "heading": "Safety Focus is Key",
+      "detail": "Agility emphasizes industrial safety certification, having designed robots from the start to meet operational requirements in customer facilities."
+    }
+  ]
+}
