@@ -52,7 +52,7 @@ def _run_single(args):
     with open("todays_story.json", "w", encoding="utf-8") as f:
         json.dump({"story": story, "points": points}, f, indent=2)
 
-    print("\n== 2/4  Generating slides (AI backgrounds) ==")
+    print("\n== 2/4  Generating slides (background photos) ==")
     image_paths = generate_slides.generate_single(story, points, handle=args.handle)
     for p in image_paths:
         print(" ", p)
@@ -60,6 +60,13 @@ def _run_single(args):
     if args.dry_run:
         print("\n--dry-run set: stopping before posting. Check the output/ folder.")
         return
+
+    # In github host mode, Instagram fetches the slides by their raw.github URL,
+    # so the images MUST be committed + pushed to the repo BEFORE we post —
+    # otherwise Instagram gets a 404. (Imgur mode uploads directly, so skip.)
+    if config.IMAGE_HOST_MODE == "github":
+        print("\n== Pushing slides to the repo (so Instagram can fetch them) ==")
+        _push_images()
 
     print("\n== 3/4  Posting to Instagram ==")
     if args.unofficial:
@@ -71,6 +78,28 @@ def _run_single(args):
     print("\n== 4/4  Marking story as posted ==")
     fetch_news.mark_posted(story)
     print("Done.")
+
+
+def _push_images():
+    """Commit the freshly generated slides to the repo and push, so their
+    raw.githubusercontent.com URLs resolve before we hand them to Instagram."""
+    import subprocess
+
+    def run(cmd):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.stdout.strip():
+            print("  " + result.stdout.strip())
+        return result.returncode
+
+    run(["git", "config", "user.name", "tech-news-bot"])
+    run(["git", "config", "user.email", "actions@users.noreply.github.com"])
+    run(["git", "add", "output"])
+    # commit may be a no-op if images are byte-identical to last run; that's fine
+    run(["git", "commit", "-m", "Slides for this run"])
+    code = run(["git", "push"])
+    if code != 0:
+        print("  [warn] git push failed; Instagram may not be able to fetch the "
+              "images. Check repo permissions (workflow needs contents: write).")
 
 
 def _run_digest(args):
