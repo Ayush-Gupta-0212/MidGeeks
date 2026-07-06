@@ -70,6 +70,35 @@ _CONCEPT_QUERIES = [
 ]
 _FALLBACK_QUERY = "technology abstract dark"
 
+# Hashtags matched to the same concepts used for image selection, so the tags
+# fit the story's actual topic. A small base set is always included by the
+# caption builder; these are added on top when the topic matches.
+_CONCEPT_HASHTAGS = {
+    "empty office workspace": ["#layoffs", "#techlayoffs", "#futureofwork"],
+    "cybersecurity digital lock": ["#cybersecurity", "#infosec", "#databreach", "#privacy"],
+    "artificial intelligence technology": ["#ai", "#artificialintelligence", "#machinelearning", "#genai"],
+    "computer chip circuit board": ["#semiconductors", "#chips", "#hardware"],
+    "video game controller": ["#gaming", "#videogames", "#gamedev"],
+    "smartphone mobile technology": ["#smartphone", "#mobile", "#gadgets"],
+    "data center server room": ["#cloud", "#datacenter", "#infrastructure"],
+    "electric car technology": ["#ev", "#electricvehicles", "#autonomous"],
+    "cryptocurrency blockchain": ["#crypto", "#blockchain", "#web3"],
+    "robotics technology": ["#robotics", "#automation", "#robots"],
+    "social media smartphone": ["#socialmedia", "#creators", "#apps"],
+    "space technology": ["#space", "#spacetech", "#satellites"],
+    "software code screen": ["#software", "#coding", "#developers", "#opensource"],
+    "finance business chart": ["#techfunding", "#startups", "#venturecapital"],
+    "technology abstract dark": ["#innovation", "#future"],
+}
+
+
+def hashtags_for_context(text, limit=None):
+    """Topic-matched hashtags for a slide/story, chosen from the same concept
+    the image was picked from (so tags fit the actual subject)."""
+    query = query_from_context(text)
+    tags = _CONCEPT_HASHTAGS.get(query, _CONCEPT_HASHTAGS[_FALLBACK_QUERY])
+    return tags[:limit] if limit else list(tags)
+
 
 def reset_run():
     """Call once at the start of each carousel so uniqueness + credits are
