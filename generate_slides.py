@@ -18,7 +18,7 @@ the pipeline never breaks on an image failure.
 import os
 from datetime import datetime, timedelta, timezone
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 import config
 import pexels_image
@@ -113,6 +113,7 @@ def _apply_tint(img):
 
 def _canvas(concept):
     bg = _apply_tint(_background(concept))
+    _current[0] = bg
     return bg, ImageDraw.Draw(bg)
 
 
@@ -120,19 +121,41 @@ def _canvas(concept):
 # Shared drawing pieces
 # ---------------------------------------------------------------------------
 
-def _draw_text(draw, xy, text, font, fill, stroke=3):
-    draw.text(xy, text, font=font, fill=fill, stroke_width=stroke, stroke_fill="black")
+# Reference to the slide currently being drawn, so text helpers can composite
+# a blurred drop shadow onto the actual image (a blur needs the pixels, not
+# just a draw handle).
+_current = [None]
+
+# Softness of the drop shadow behind text. Larger = more diffuse/softer.
+_SHADOW_BLUR = 7
+_SHADOW_OFFSET = 5
+
+
+def _soft_shadow(xy, text, font):
+    """Composite a blurred dark shadow of `text` onto the current slide."""
+    img = _current[0]
+    if img is None:
+        return
+    x, y = xy
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    ld.text((x + _SHADOW_OFFSET, y + _SHADOW_OFFSET), text, font=font, fill=(0, 0, 0, 235))
+    layer = layer.filter(ImageFilter.GaussianBlur(_SHADOW_BLUR))
+    img.paste(Image.new("RGB", img.size, (0, 0, 0)), (0, 0), layer)
+
+
+def _draw_text(draw, xy, text, font, fill, stroke=0):
+    """All body/headline text: a soft blurred shadow underneath, then crisp
+    text on top. `stroke` is ignored now (kept so existing calls still work)."""
+    _soft_shadow(xy, text, font)
+    draw.text(xy, text, font=font, fill=fill)
 
 
 def _draw_text_soft(draw, xy, text, font, fill, shadow_offset=4):
-    """Draw text with a soft drop shadow instead of a hard outline — keeps
-    legibility over a photo but looks cleaner than a stroke. Used for the
-    orange headings, which sit over the darkest part of the tint anyway."""
-    x, y = xy
-    # a couple of offset dark copies underneath = subtle shadow
-    for dx, dy in ((shadow_offset, shadow_offset), (shadow_offset - 1, shadow_offset - 1)):
-        draw.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0))
-    draw.text((x, y), text, font=font, fill=fill)
+    """Same soft-shadow treatment; kept as a separate name for the callers
+    (headings, handle) that referenced it."""
+    _soft_shadow(xy, text, font)
+    draw.text(xy, text, font=font, fill=fill)
 
 
 def _accent_bar(draw, x, y0, y1, w=9):
@@ -231,7 +254,7 @@ def render_outro(story, total, handle, concept):
     # follow prompt and the handle, sized to feel like the payoff slide.
     enjoyed_font = _font("body", 38)
     follow_font, follow_lines = _autosize(
-        draw, "Follow for tomorrow's top tech story", "headline",
+        draw, "Follow for more tech stories", "headline",
         W - 2 * MARGIN - 28, 3, 88, 54
     )
     handle_font = _font("headline", 74)
