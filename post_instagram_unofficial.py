@@ -61,18 +61,12 @@ def _login():
     return cl
 
 
-def build_caption(stories):
-    lines = ["Today's tech signal:\n"]
-    for s in stories:
-        lines.append(f"→ {s['title']} ({s['source']})")
-    lines.append("\nFull links in bio.\n")
-    lines.append(config.CAPTION_HASHTAGS)
-    return "\n".join(lines)
-
-
-def post_carousel(image_paths, stories):
+def post_carousel(image_paths, stories, points=None):
     cl = _login()
-    caption = build_caption(stories)
+    # Reuse the official poster's caption builder so both paths produce the
+    # same practical, topic-matched caption (single source of truth).
+    import post_instagram_official
+    caption = post_instagram_official.build_caption(stories, points=points)
     media = cl.album_upload(image_paths, caption)
     print(f"Published! code: {media.code}  url: https://www.instagram.com/p/{media.code}/")
     return media
