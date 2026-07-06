@@ -66,22 +66,21 @@ KEYWORD_ALLOWLIST = [
 ]
 
 # ---------------------------------------------------------------------------
-# GOOGLE GEMINI — used for two things:
-#   1. summarizing the REAL article text into genuine key points (text model)
-#   2. generating a background image per slide (image model)
-# One free API key from https://aistudio.google.com/apikey covers both.
+# GOOGLE GEMINI — now used ONLY for summarizing real article text into key
+# points (the text model). Image generation moved to Pexels below, because
+# Google grants zero free image quota. One free key still needed for text.
 # Set as a GitHub Actions secret named GEMINI_API_KEY.
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_TEXT_MODEL = "gemini-2.5-flash"          # summarize article -> key points
-# Use the 2.5 image model: it's the one with a documented FREE API tier
-# (~500 requests/day). The newer 3.x "-preview" image models often have no
-# free API quota at all, which returns 429 on the very first call.
-GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
 
-# If image generation fails or the key is missing, fall back to a solid
-# dark background instead of breaking the run.
-IMAGE_FALLBACK_ENABLED = True
+# ---------------------------------------------------------------------------
+# PEXELS — background photos (free, ~200 requests/hour; a post uses ~6).
+# Each slide's photo is chosen to match that slide's content, and no two
+# slides in a post repeat a photo. Get a free key at
+# https://www.pexels.com/api/ and set it as a secret named PEXELS_API_KEY.
+# ---------------------------------------------------------------------------
+PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY", "")
 
 # Stories are skipped if title+summary+link contains any of these — a light
 # default net against off-brand content (piracy-adjacent sites, movie/TV
