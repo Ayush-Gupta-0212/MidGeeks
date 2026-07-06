@@ -124,6 +124,17 @@ def _draw_text(draw, xy, text, font, fill, stroke=3):
     draw.text(xy, text, font=font, fill=fill, stroke_width=stroke, stroke_fill="black")
 
 
+def _draw_text_soft(draw, xy, text, font, fill, shadow_offset=4):
+    """Draw text with a soft drop shadow instead of a hard outline — keeps
+    legibility over a photo but looks cleaner than a stroke. Used for the
+    orange headings, which sit over the darkest part of the tint anyway."""
+    x, y = xy
+    # a couple of offset dark copies underneath = subtle shadow
+    for dx, dy in ((shadow_offset, shadow_offset), (shadow_offset - 1, shadow_offset - 1)):
+        draw.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0))
+    draw.text((x, y), text, font=font, fill=fill)
+
+
 def _accent_bar(draw, x, y0, y1, w=9):
     draw.rectangle([x, y0, x + w, y1], fill=config.COLORS["accent"])
 
@@ -185,12 +196,12 @@ def render_point(point, index, total, handle, concept, number):
     _header(draw, f"POINT {number}")
 
     heading_font, h_lines = _autosize(
-        draw, point["heading"], "headline", W - 2 * MARGIN - 28, 3, 76, 44
+        draw, point["heading"], "headline", W - 2 * MARGIN - 28, 3, 88, 50
     )
     detail_font = _font("body", 34)
     d_lines = _wrap_to_width(draw, point["detail"], detail_font, W - 2 * MARGIN - 28)
 
-    h_lh = int(heading_font.size * 1.14)
+    h_lh = int(heading_font.size * 1.12)
     d_lh = int(detail_font.size * 1.34)
     gap = 28
     block_h = len(h_lines) * h_lh + gap + len(d_lines) * d_lh
@@ -201,7 +212,7 @@ def render_point(point, index, total, handle, concept, number):
 
     y = top_y
     for line in h_lines:
-        _draw_text(draw, (MARGIN + 28, y), line, heading_font, config.COLORS["accent"], stroke=4)
+        _draw_text_soft(draw, (MARGIN + 28, y), line, heading_font, config.COLORS["accent"])
         y += h_lh
     y += gap
     for line in d_lines:
@@ -216,31 +227,35 @@ def render_outro(story, total, handle, concept):
     img, draw = _canvas(concept)
     _header(draw, "THE TAKEAWAY")
 
-    headline_font, lines = _autosize(
+    # A bolder, centered call-to-action. No source/photo credits — just the
+    # follow prompt and the handle, sized to feel like the payoff slide.
+    enjoyed_font = _font("body", 38)
+    follow_font, follow_lines = _autosize(
         draw, "Follow for tomorrow's top tech story", "headline",
-        W - 2 * MARGIN - 28, 4, 78, 48
+        W - 2 * MARGIN - 28, 3, 88, 54
     )
-    line_h = int(headline_font.size * 1.16)
-    block_h = len(lines) * line_h
-    bottom_y = H - 300
-    top_y = bottom_y - block_h
+    handle_font = _font("headline", 74)
 
-    _accent_bar(draw, MARGIN, top_y - 8, bottom_y)
+    # Vertically center the block in the lower-middle of the slide.
+    enjoyed_h = int(enjoyed_font.size * 1.3)
+    follow_lh = int(follow_font.size * 1.14)
+    handle_h = int(handle_font.size * 1.2)
+    gap1, gap2 = 24, 40
+    block_h = enjoyed_h + gap1 + len(follow_lines) * follow_lh + gap2 + handle_h
+    top_y = (H - block_h) // 2 + 60
+
     y = top_y
-    for line in lines:
-        _draw_text(draw, (MARGIN + 28, y), line, headline_font, config.COLORS["text"], stroke=4)
-        y += line_h
+    _draw_text(draw, (MARGIN + 28, y), "Enjoyed this breakdown?", enjoyed_font,
+               config.COLORS["muted"], stroke=3)
+    y += enjoyed_h + gap1
 
-    src_font = _font("body", 28)
-    _draw_text(draw, (MARGIN + 28, H - 280), f"Source: {story['source']}", src_font,
-               config.COLORS["muted"], stroke=3)
-    credits = pexels_image.last_run_credits()
-    photo_line = "Photos via Pexels"
-    if credits:
-        names = ", ".join(credits[:3])
-        photo_line = f"Photos: {names} / Pexels"
-    _draw_text(draw, (MARGIN + 28, H - 240), photo_line, src_font,
-               config.COLORS["muted"], stroke=3)
+    _accent_bar(draw, MARGIN, y - 4, y + len(follow_lines) * follow_lh)
+    for line in follow_lines:
+        _draw_text(draw, (MARGIN + 28, y), line, follow_font, config.COLORS["text"], stroke=4)
+        y += follow_lh
+    y += gap2
+
+    _draw_text_soft(draw, (MARGIN + 28, y), handle, handle_font, config.COLORS["accent"])
 
     _footer(draw, total, total, handle)
     return img
