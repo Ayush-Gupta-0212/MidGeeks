@@ -145,16 +145,62 @@ def publish(creation_id):
     return _check(resp)["id"]
 
 
-def build_caption(stories):
-    lines = ["Today's tech signal:\n"]
-    for s in stories:
-        lines.append(f"→ {s['title']} ({s['source']})")
-    lines.append("\nFull links in bio.\n")
-    lines.append(config.CAPTION_HASHTAGS)
+def build_caption(stories, points=None):
+    """Build a practical caption: a hook, brief real context from the article's
+    key points, a source link, a follow CTA, and topic-matched hashtags.
+
+    Everything factual comes from the story/points that were extracted from the
+    real article — nothing invented. Falls back gracefully if points are absent.
+    """
+    import pexels_image
+
+    story = stories[0]
+    title = story.get("title", "").strip().rstrip(".")
+    source = story.get("source", "")
+    link = story.get("link", "")
+
+    lines = []
+
+    # 1. HOOK — the headline as an attention-grabbing opener.
+    lines.append(f"{title} 👇")
+    lines.append("")
+
+    # 2. BRIEF CONTEXT — the first couple of real key points, in plain prose.
+    if points:
+        for p in points[:2]:
+            detail = p.get("detail", "").strip()
+            if detail:
+                lines.append(f"• {detail}")
+        lines.append("")
+        if len(points) > 2:
+            lines.append("Swipe through for the full breakdown.")
+            lines.append("")
+
+    # 3. SOURCE — credit + link (not clickable in IG, but transparent/citable).
+    if source and link:
+        lines.append(f"📰 Source: {source}")
+        lines.append(link)
+        lines.append("")
+    elif source:
+        lines.append(f"📰 Source: {source}")
+        lines.append("")
+
+    # 4. CTA
+    lines.append(config.CAPTION_CTA)
+    lines.append("")
+
+    # 5. HASHTAGS — base set + tags matched to this story's topic.
+    context_text = f"{title}. " + " ".join(
+        p.get("heading", "") + " " + p.get("detail", "") for p in (points or [])
+    )
+    topic_tags = pexels_image.hashtags_for_context(context_text)
+    all_tags = list(dict.fromkeys(config.CAPTION_BASE_HASHTAGS + topic_tags))  # de-dupe, keep order
+    lines.append(" ".join(all_tags))
+
     return "\n".join(lines)
 
 
-def post_carousel(image_paths, stories):
+def post_carousel(image_paths, stories, points=None):
     _require_credentials()
 
     print("1/4  Uploading images to a public URL...")
@@ -169,7 +215,7 @@ def post_carousel(image_paths, stories):
         print(f"    container ready: {item_id}")
 
     print("3/4  Creating the carousel container...")
-    caption = build_caption(stories)
+    caption = build_caption(stories, points=points)
     carousel_id = create_carousel_container(item_ids, caption)
     wait_until_ready(carousel_id)
 
