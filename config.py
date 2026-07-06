@@ -162,7 +162,10 @@ IG_USERNAME = os.environ.get("IG_USERNAME", "")
 IG_PASSWORD = os.environ.get("IG_PASSWORD", "")
 IG_SESSION_FILE = "ig_session.json"
 
-CAPTION_HASHTAGS = (
-    "#technews #tech #technology #ai #startup #gadgets #innovation "
-    "#dailytech #techupdates"
-)
+# Base hashtags added to EVERY post (broad reach). Topic-specific tags that
+# match each story are added on top automatically (see pexels_image
+# .hashtags_for_context), so you don't need many here.
+CAPTION_BASE_HASHTAGS = ["#technews", "#tech", "#technology", "#dailytech"]
+
+# A short call-to-action line near the end of every caption.
+CAPTION_CTA = "Follow @midgeeks.studio for more tech stories 👀"
