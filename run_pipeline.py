@@ -73,7 +73,7 @@ def _run_single(args):
         import post_instagram_unofficial as poster
     else:
         import post_instagram_official as poster
-    poster.post_carousel(image_paths, [story])
+    poster.post_carousel(image_paths, [story], points=points)
 
     print("\n== 4/4  Marking story as posted ==")
     fetch_news.mark_posted(story)
