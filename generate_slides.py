@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 from PIL import Image, ImageDraw, ImageFont
 
 import config
-import gemini_image
+import pexels_image
 
 W, H = config.CANVAS_SIZE
 MARGIN = 90
@@ -86,7 +86,7 @@ def _cover_fit(img, tw, th):
 
 def _background(concept):
     """AI image if available, else solid dark fallback."""
-    img = gemini_image.generate_background(concept)
+    img = pexels_image.generate_background(concept)
     if img is None:
         return Image.new("RGB", (W, H), config.COLORS["bg"])
     return _cover_fit(img, W, H)
@@ -234,7 +234,12 @@ def render_outro(story, total, handle, concept):
     src_font = _font("body", 28)
     _draw_text(draw, (MARGIN + 28, H - 280), f"Source: {story['source']}", src_font,
                config.COLORS["muted"], stroke=3)
-    _draw_text(draw, (MARGIN + 28, H - 240), "Images: AI-generated", src_font,
+    credits = pexels_image.last_run_credits()
+    photo_line = "Photos via Pexels"
+    if credits:
+        names = ", ".join(credits[:3])
+        photo_line = f"Photos: {names} / Pexels"
+    _draw_text(draw, (MARGIN + 28, H - 240), photo_line, src_font,
                config.COLORS["muted"], stroke=3)
 
     _footer(draw, total, total, handle)
@@ -246,12 +251,12 @@ def render_outro(story, total, handle, concept):
 # ---------------------------------------------------------------------------
 
 def _concept_for(story, point=None):
-    """Short visual concept for the background image of a slide. Uses the
-    story title (and point heading, if any) so each slide's image relates to
-    that slide's content."""
+    """Text used to choose a slide's background photo. For a point slide we
+    include the heading AND detail so the image reflects the point's full
+    content; for the cover/outro we use the story title."""
     base = story.get("title", "technology")
     if point:
-        return f"{base}; focus: {point['heading']}"
+        return f"{base}. {point['heading']}. {point['detail']}"
     return base
 
 
@@ -264,6 +269,10 @@ def generate_single(story, points, handle=None, out_dir=None):
     for f in os.listdir(out_dir):
         if f.lower().endswith(".jpg"):
             os.remove(os.path.join(out_dir, f))
+
+    # Fresh per-post state so no two slides repeat a photo and images vary
+    # from day to day.
+    pexels_image.reset_run()
 
     total = len(points) + 2  # cover + points + outro
     paths = []
