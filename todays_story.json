@@ -1,27 +1,27 @@
 {
   "story": {
-    "source": "TechCrunch",
-    "title": "This humanoid robotics company is going public, but its CEO isn\u2019t promising a robot in your home anytime soon",
-    "summary": "While other humanoid startups chase sky-high valuations, Agility Robotics is betting its future on execution \u2014 and a SPAC.",
-    "link": "https://techcrunch.com/2026/07/05/this-humanoid-robotics-company-is-going-public-but-its-ceo-isnt-promising-a-robot-in-your-home-anytime-soon/",
-    "timestamp": 1783317929.0
+    "source": "The Verge",
+    "title": "The robotaxi law that could ban Tesla",
+    "summary": "For more than a decade, one question has loomed over the race to build autonomous vehicles: Are cameras alone enough to safely replace human drivers, or do truly driverless cars need additional, overlapping sensors like lidar and radar to navigate the world reliably? Tesla has bet billions of dollars that artificial intelligence and cameras are [\u2026]",
+    "link": "https://www.theverge.com/transportation/962309/new-jersey-robotaxi-bill-lidar-tesla",
+    "timestamp": 1783508400.0
   },
   "points": [
     {
-      "heading": "Agility Robotics Goes Public",
-      "detail": "Agility Robotics will go public via a SPAC, valuing it at $2.5 billion and raising over $620 million, a robotics record."
+      "heading": "New Jersey's Robotaxi Rule",
+      "detail": "A bill would require companies to use cameras plus two other sensing technologies, like lidar and radar."
     },
     {
-      "heading": "Targeting Warehouses, Factories",
-      "detail": "Agility's Digit robot is designed for moving heavy objects in warehouses and factories, optimized for industrial spaces."
+      "heading": "Tesla's Robotaxis Banned?",
+      "detail": "The measure would effectively prevent Tesla\u2019s camera-only Robotaxi system from operating in New Jersey unless hardware changes."
     },
     {
-      "heading": "Strong Revenue Pipeline",
-      "detail": "Agility has over $300 million in booked, multi-year revenue for about 1,000 robots via a robots-as-a-service model."
+      "heading": "Prioritizing NJ Safety",
+      "detail": "Bill sponsor Andrew Zwicker believes autonomous vehicles should roll out cautiously for New Jersey safety."
     },
     {
-      "heading": "Safety Focus is Key",
-      "detail": "Agility emphasizes industrial safety certification, having designed robots from the start to meet operational requirements in customer facilities."
+      "heading": "Industry Sensor Debate",
+      "detail": "Tesla bets cameras alone are sufficient; nearly every other major AV developer uses additional sensors like lidar and radar."
     }
   ]
 }
