@@ -1,27 +1,27 @@
 {
   "story": {
-    "source": "Wired",
-    "title": "OnlyFans Models Are Accidentally Making Hacked Government Websites Disappear",
-    "summary": "Scammers are hijacking government websites to upload ads for \u201cleaked\u201d OnlyFans content. Thousands of copyright complaints from adult creators are helping people avoid malicious links.",
-    "link": "https://www.wired.com/story/onlyfans-creators-dmca-hacked-government-websites/",
-    "timestamp": 1783506600.0
+    "source": "TechCrunch",
+    "title": "Former OpenAI exec Kevin Weil is now on the board of Stoke Space",
+    "summary": "Kevin Weil's new role at Stoke Space suggests reusable rockets are the next hot thing in Silicon Valley.",
+    "link": "https://techcrunch.com/2026/07/08/former-openai-exec-kevin-weil-is-now-on-the-board-of-stoke-space/",
+    "timestamp": 1783512000.0
   },
   "points": [
     {
-      "heading": "Models fight stolen content",
-      "detail": "Adult content creators use DMCA takedown requests to combat pirated content across the internet."
+      "heading": "Former OpenAI Exec Joins Stoke",
+      "detail": "Kevin Weil, a veteran tech executive, has joined the board of Stoke Space, a Seattle startup building reusable rockets."
     },
     {
-      "heading": "Hacked government websites impacted",
-      "detail": "DMCA requests target compromised government and university websites due to pirated adult content."
+      "heading": "Brings Fundraising, Network Expertise",
+      "detail": "Weil brings fundraising knowledge, network, and Silicon Valley experience to Stoke Space, having been an early investor."
     },
     {
-      "heading": "Thousands of sites affected",
-      "detail": "Over 2,000 domains across 80 countries received copyright takedown requests linked to adult content creators."
+      "heading": "Stoke Space's Reusable Rockets",
+      "detail": "Stoke Space is building reusable rockets, like Nova, to compete with SpaceX, aiming for a completely reusable model to fly this year."
     },
     {
-      "heading": "Scammers exploit official sites",
-      "detail": "Scammers hijack official .gov and .edu sites to upload malicious pages, using creators' names as lures."
+      "heading": "Addresses Unsolved Launch Problems",
+      "detail": "The world realizes launch is \"still not solved,\" and full, rapid reuse is seen as inevitable for space data centers and military contracts."
     }
   ]
 }
