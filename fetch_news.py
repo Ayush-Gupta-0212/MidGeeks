@@ -85,8 +85,20 @@ def save_history(history):
         json.dump(pruned, f, indent=2)
 
 
+def _priority_score(candidate):
+    """Stories whose title+summary contain a KEYWORD_PRIORITY term get score 1
+    (ranked first). Everything else scores 0. Within the same score tier,
+    stories are still sorted newest-first so we always get fresh content."""
+    if not config.KEYWORD_PRIORITY:
+        return 0
+    haystack = f"{candidate.get('title', '')} {candidate.get('summary', '')}".lower()
+    return 1 if any(k.lower() in haystack for k in config.KEYWORD_PRIORITY) else 0
+
+
 def fetch_candidates():
-    """Return every not-yet-posted entry across all feeds, newest first."""
+    """Return every not-yet-posted entry across all feeds.
+    Sorted by: priority tier first (AI/software > general tech), then
+    newest-first within each tier."""
     history = load_history()
     candidates = []
 
@@ -118,7 +130,8 @@ def fetch_candidates():
                 }
             )
 
-    candidates.sort(key=lambda c: c["timestamp"], reverse=True)
+    # Sort: high-priority stories first, then newest-first within each tier.
+    candidates.sort(key=lambda c: (_priority_score(c), c["timestamp"]), reverse=True)
     return candidates
 
 
