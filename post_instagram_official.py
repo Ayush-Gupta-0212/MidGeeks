@@ -51,11 +51,10 @@ def _check(response):
 
 def upload_image_urls(image_paths):
     """Turn local JPEGs into public URLs Instagram can fetch.
-    Default: commit them to this (public) GitHub repo and use the raw URL.
-    Set IMAGE_HOST_MODE=imgur to use anonymous Imgur uploads instead
-    (works even if your repo is private)."""
+    IMAGE_HOST_MODE=imgur  -> ImgBB upload (instant URL, recommended)
+    IMAGE_HOST_MODE=github -> raw.githubusercontent.com (CDN may lag)"""
     if config.IMAGE_HOST_MODE == "imgur":
-        return _upload_via_imgur(image_paths)
+        return _upload_via_imgbb(image_paths)
     return _urls_via_github_raw(image_paths)
 
 
@@ -76,20 +75,33 @@ def _urls_via_github_raw(image_paths):
     return urls
 
 
-def _upload_via_imgur(image_paths):
+def _upload_via_imgbb(image_paths):
+    """Upload each slide to ImgBB and return a list of public URLs.
+    ImgBB gives an instant permanent public URL — no CDN cache lag,
+    no login friction. Free tier: 32MB per image, no daily cap.
+    Set IMGUR_CLIENT_ID secret to your ImgBB API key (same secret name,
+    no code changes needed elsewhere)."""
     if not config.IMGUR_CLIENT_ID:
-        sys.exit("IMAGE_HOST_MODE=imgur but IMGUR_CLIENT_ID isn't set.")
+        sys.exit("IMAGE_HOST_MODE=imgur but IMGUR_CLIENT_ID isn't set. "
+                 "Add your ImgBB API key as a secret named IMGUR_CLIENT_ID.")
     urls = []
     for path in image_paths:
         with open(path, "rb") as f:
-            resp = requests.post(
-                "https://api.imgur.com/3/image",
-                headers={"Authorization": f"Client-ID {config.IMGUR_CLIENT_ID}"},
-                files={"image": f},
-                timeout=30,
-            )
-        data = _check(resp)
-        urls.append(data["data"]["link"])
+            import base64
+            image_b64 = base64.b64encode(f.read()).decode("utf-8")
+        resp = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={
+                "key": config.IMGUR_CLIENT_ID,
+                "image": image_b64,
+            },
+            timeout=30,
+        )
+        data = resp.json()
+        if not data.get("success"):
+            raise RuntimeError(f"ImgBB upload failed: {data}")
+        urls.append(data["data"]["url"])
+        print(f"  uploaded: {data['data']['url']}")
     return urls
 
 
