@@ -38,31 +38,44 @@ MAX_POINT_SLIDES = 4
 # For digest mode only (kept for backwards compatibility):
 STORY_SLIDE_COUNT = 5
 
-# Relevance filter: a story must match at least one of these in title+summary
-# to be considered. Narrowed to AI / computer science / tech-industry topics
-# specifically — this is what keeps things like space-agency news, movie
-# reviews, or general science out, even though they show up in "tech" feeds.
-# Case-insensitive substring match. Tune freely — this list is a starting
-# point, not exhaustive.
+# Relevance filter: a story must match at least one of these to be considered
+# at all. Scoped tightly to AI tools, software, CS, and core tech-industry
+# topics — not general technology. Hardware/robotics are excluded here unless
+# they're part of a broader AI or chip story.
 KEYWORD_ALLOWLIST = [
-    # AI / ML
+    # AI tools and models — the primary focus
     "AI", "artificial intelligence", "machine learning", "LLM", "chatbot",
-    "generative", "neural network", "OpenAI", "Anthropic", "Claude", "Gemini",
-    "ChatGPT", "Copilot", "agent",
-    # software / CS
+    "generative AI", "neural network", "OpenAI", "Anthropic", "Claude",
+    "Gemini", "ChatGPT", "Copilot", "GPT", "agent", "AI model", "AI tool",
+    "large language model", "diffusion model", "AI assistant", "AI startup",
+    "AI company", "foundation model",
+    # software / computer science
     "software", "app", "programming", "developer", "code", "coding", "API",
     "open source", "GitHub", "framework", "algorithm", "computer science",
     "cybersecurity", "hack", "breach", "vulnerability", "malware", "encryption",
     "leak", "privacy", "exploit", "phishing", "ransomware", "zero-day",
-    # hardware / infra that's squarely tech-industry
-    "chip", "semiconductor", "processor", "GPU", "CPU", "cloud", "data center",
-    "server", "database",
-    # tech industry / business
-    "startup", "funding", "venture capital", "IPO", "acquisition", "big tech",
-    "silicon valley", "tech industry",
-    # the companies that anchor most real tech-industry stories
-    "Google", "Microsoft", "Apple", "Meta", "Amazon", "Nvidia", "Tesla",
-    "SpaceX", "Alibaba", "Samsung",
+    # cloud and infra
+    "cloud", "data center", "server", "database", "SaaS", "platform",
+    # core chip/semiconductor only when tied to AI workloads
+    "AI chip", "GPU", "Nvidia", "TPU",
+    # tech industry news
+    "startup", "funding", "venture capital", "IPO", "acquisition", "layoff",
+    "big tech", "tech company",
+    # the specific companies whose stories are almost always relevant
+    "Google", "Microsoft", "Apple", "Meta", "Amazon", "Nvidia", "OpenAI",
+    "Anthropic", "Mistral", "xAI", "Perplexity", "Cohere",
+]
+
+# Stories matching these HIGH-PRIORITY terms get ranked above all others —
+# even if a lower-priority story is newer. This is how we ensure AI tools
+# and software stories beat hardware/robotics ones when both are available.
+KEYWORD_PRIORITY = [
+    "AI tool", "AI model", "AI assistant", "ChatGPT", "Claude", "Gemini",
+    "GPT", "LLM", "large language model", "generative AI", "OpenAI",
+    "Anthropic", "Mistral", "Perplexity", "Cohere", "xAI",
+    "machine learning", "foundation model", "AI agent", "AI startup",
+    "software", "developer", "programming", "open source", "cybersecurity",
+    "hack", "breach", "vulnerability",
 ]
 
 # ---------------------------------------------------------------------------
