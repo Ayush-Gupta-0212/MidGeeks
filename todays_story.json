@@ -1,27 +1,27 @@
 {
   "story": {
     "source": "TechCrunch",
-    "title": "Former OpenAI exec Kevin Weil is now on the board of Stoke Space",
-    "summary": "Kevin Weil's new role at Stoke Space suggests reusable rockets are the next hot thing in Silicon Valley.",
-    "link": "https://techcrunch.com/2026/07/08/former-openai-exec-kevin-weil-is-now-on-the-board-of-stoke-space/",
-    "timestamp": 1783512000.0
+    "title": "\u2018Slow-cial\u2019 app Roost forces you to slow down to the speed of a carrier pigeon",
+    "summary": "This developer didn't expect his side project to grow to 300,000 users, but people love Roost because it's an alternative to an always-on, fast-paced online culture.",
+    "link": "https://techcrunch.com/2026/07/08/slow-cial-app-roost-forces-you-to-slow-down-to-the-speed-of-a-carrier-pigeon/",
+    "timestamp": 1783538531.0
   },
   "points": [
     {
-      "heading": "Former OpenAI Exec Joins Stoke",
-      "detail": "Kevin Weil, a veteran tech executive, has joined the board of Stoke Space, a Seattle startup building reusable rockets."
+      "heading": "Slow-cial Messaging App",
+      "detail": "Roost is a \"slow-cial\" app where messages take hours or days to send, depending on the chosen bird's real-life travel speed."
     },
     {
-      "heading": "Brings Fundraising, Network Expertise",
-      "detail": "Weil brings fundraising knowledge, network, and Silicon Valley experience to Stoke Space, having been an early investor."
+      "heading": "Addresses Demand for Slowdown",
+      "detail": "People crave the opportunity to slow down and disconnect from apps that constantly demand attention, embracing technology that adds friction."
     },
     {
-      "heading": "Stoke Space's Reusable Rockets",
-      "detail": "Stoke Space is building reusable rockets, like Nova, to compete with SpaceX, aiming for a completely reusable model to fly this year."
+      "heading": "Rapid User Growth",
+      "detail": "The app grew from 10,000 to 100,000 users in three days and is now about to hit 300,000 users."
     },
     {
-      "heading": "Addresses Unsolved Launch Problems",
-      "detail": "The world realizes launch is \"still not solved,\" and full, rapid reuse is seen as inevitable for space data centers and military contracts."
+      "heading": "AI Art Controversy",
+      "detail": "The app faced user complaints for using AI-generated art, leading its creator to run a contest for artists to contribute new art."
     }
   ]
 }
