@@ -1,27 +1,27 @@
 {
   "story": {
     "source": "The Verge",
-    "title": "Fidji Simo steps down from leading OpenAI\u2019s AGI work due to illness",
-    "summary": "OpenAI's Fidji Simo is departing her full-time role as the company's AGI chief and is transitioning to being a \"part-time advisor,\" she said on X. The news follows Simo's original announcement in April that she would take a few weeks of medical leave due to a neuroimmune condition, shortly after she had taken on the [\u2026]",
-    "link": "https://www.theverge.com/ai-artificial-intelligence/963738/openai-fidji-simo-steps-down-ceo-advisor",
-    "timestamp": 1783639444.0
+    "title": "I spent a week using the Trump phone \u2014 it sucks",
+    "summary": "The Trump phone was never a serious phone. Not when it was announced last June, in dodgy renders and with an incoherent spec sheet. Nor when Trump Mobile admitted - just two weeks later - that it wouldn't be made in the US. Not even when the company revealed the final phone, first to me [\u2026]",
+    "link": "https://www.theverge.com/tech/963382/trump-mobile-t1-phone-review",
+    "timestamp": 1783693199.0
   },
   "points": [
     {
-      "heading": "Simo Steps Down from AGI",
-      "detail": "Fidji Simo is departing her full-time role as OpenAI\u2019s AGI chief, transitioning to a part-time advisor position."
+      "heading": "Not a Serious Phone",
+      "detail": "The T1 phone is described as a marketing stunt, not a serious device, despite being a real product now on sale for $499."
     },
     {
-      "heading": "Medical Leave for Illness",
-      "detail": "Simo took medical leave due to a severe exacerbation of a chronic neuroimmune condition, requiring her full focus."
+      "heading": "Cheap, Tacky Design",
+      "detail": "The T1 is a curved slab of cheap gold plastic with sticky friction, and almost every detail speaks to bad design."
     },
     {
-      "heading": "Other C-suite Changes",
-      "detail": "COO Brad Lightcap stepped down to focus on special projects, and CMO Kate Rouch stepped down for her health."
+      "heading": "Limited Network Support",
+      "detail": "The phone cannot maintain signal stronger than 2G in the UK and likely will not work outside North America due to unsupported network bands."
     },
     {
-      "heading": "OpenAI Reorganization",
-      "detail": "OpenAI underwent a reorganization in May, with Greg Brockman officially taking charge of product strategy and scaling efforts."
+      "heading": "Underwhelming Performance",
+      "detail": "Despite seemingly impressive specs, the T1 is often sluggish and stutters when switching apps, making even basic apps frustrating."
     }
   ]
 }
