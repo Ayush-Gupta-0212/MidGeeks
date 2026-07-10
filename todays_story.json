@@ -1,27 +1,27 @@
 {
   "story": {
-    "source": "TechCrunch",
-    "title": "Anthropic\u2019s new Claude feature is quietly selling you on AI",
-    "summary": "Claude\u2019s new Reflect dashboard doesn\u2019t just visualize how you use AI. It also subtly reinforces how much of your daily work now depends on Anthropic\u2019s chatbot.",
-    "link": "https://techcrunch.com/2026/07/09/anthropics-new-claude-feature-is-quietly-selling-you-on-ai/",
-    "timestamp": 1783608789.0
+    "source": "The Verge",
+    "title": "Fidji Simo steps down from leading OpenAI\u2019s AGI work due to illness",
+    "summary": "OpenAI's Fidji Simo is departing her full-time role as the company's AGI chief and is transitioning to being a \"part-time advisor,\" she said on X. The news follows Simo's original announcement in April that she would take a few weeks of medical leave due to a neuroimmune condition, shortly after she had taken on the [\u2026]",
+    "link": "https://www.theverge.com/ai-artificial-intelligence/963738/openai-fidji-simo-steps-down-ceo-advisor",
+    "timestamp": 1783639444.0
   },
   "points": [
     {
-      "heading": "New Feature: Claude Reflect",
-      "detail": "\"Reflect\" is a built-in dashboard letting users track and visualize their Claude usage and broader AI habits."
+      "heading": "Simo Steps Down from AGI",
+      "detail": "Fidji Simo is departing her full-time role as OpenAI\u2019s AGI chief, transitioning to a part-time advisor position."
     },
     {
-      "heading": "Shapes User AI Perception",
-      "detail": "Reflect aims to shape how users think about AI, framing Claude as a vital productivity tool and mindful technology."
+      "heading": "Medical Leave for Illness",
+      "detail": "Simo took medical leave due to a severe exacerbation of a chronic neuroimmune condition, requiring her full focus."
     },
     {
-      "heading": "Promotes Deeper AI Integration",
-      "detail": "It helps users see Claude as a relied-upon tool and trains them to use AI better, suggesting features like Projects."
+      "heading": "Other C-suite Changes",
+      "detail": "COO Brad Lightcap stepped down to focus on special projects, and CMO Kate Rouch stepped down for her health."
     },
     {
-      "heading": "User Data Privacy Focus",
-      "detail": "Sensitive conversations appear at a high level only, health integration data is excluded, and no data is used for other purposes."
+      "heading": "OpenAI Reorganization",
+      "detail": "OpenAI underwent a reorganization in May, with Greg Brockman officially taking charge of product strategy and scaling efforts."
     }
   ]
 }
