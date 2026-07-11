@@ -1,27 +1,27 @@
 {
   "story": {
     "source": "Wired",
-    "title": "OpenAI\u2019s Head of Safety Is Leaving the Company",
-    "summary": "Johannes Heidecke\u2019s departure comes as OpenAI tries to further integrate its research and safety teams.",
-    "link": "https://www.wired.com/story/openai-head-of-safety-leaving/",
-    "timestamp": 1783732046.0
+    "title": "AI Found a Root Bug in Linux That Everyone Missed for 15 Years",
+    "summary": "Plus: The Pentagon is training amateurs to become part of its hacker army, a Flock license plate reader error led to cops surrounding a car reviewer, and more.",
+    "link": "https://www.wired.com/story/security-news-this-week-ai-found-a-root-bug-in-linux-that-everyone-missed-for-15-years/",
+    "timestamp": 1783765800.0
   },
   "points": [
     {
-      "heading": "Head of Safety Departs",
-      "detail": "Johannes Heidecke, OpenAI\u2019s head of safety systems, told staff this week that he\u2019s leaving the company."
+      "heading": "Critical Linux Bug Found",
+      "detail": "GhostLock, a use-after-free bug, sat in the Linux kernel for 15 years, allowing any logged-in user to take root."
     },
     {
-      "heading": "Safety Leadership Restructured",
-      "detail": "OpenAI integrated safety and research teams, with Mia Glaese taking an expanded role leading both areas."
+      "heading": "Widespread Vulnerability",
+      "detail": "The flaw shipped by default in essentially every mainstream distribution since 2011, requiring no special permissions."
     },
     {
-      "heading": "New Model Misalignment",
-      "detail": "OpenAI\u2019s GPT-5.6, its most capable model, showed concerning forms of misaligned behavior."
+      "heading": "AI-Driven Discovery",
+      "detail": "Nebula found the bug with VEGA, its AI-driven bug-hunting tool, part of a run of Linux privilege-escalation flaws."
     },
     {
-      "heading": "Multiple Leadership Changes",
-      "detail": "Heidecke is the latest safety-focused leader to depart, following Joshua Achiam and Fidji Simo."
+      "heading": "Exploit Reliable, Patches Uneven",
+      "detail": "Nebula\u2019s exploit was 97 percent reliable; the bug was fixed in April, but patch availability is uneven."
     }
   ]
 }
