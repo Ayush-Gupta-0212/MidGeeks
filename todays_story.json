@@ -1,27 +1,27 @@
 {
   "story": {
-    "source": "Wired",
-    "title": "AI Found a Root Bug in Linux That Everyone Missed for 15 Years",
-    "summary": "Plus: The Pentagon is training amateurs to become part of its hacker army, a Flock license plate reader error led to cops surrounding a car reviewer, and more.",
-    "link": "https://www.wired.com/story/security-news-this-week-ai-found-a-root-bug-in-linux-that-everyone-missed-for-15-years/",
-    "timestamp": 1783765800.0
+    "source": "Hacker News",
+    "title": "What xAI's Grok Build CLI Actually Sends to xAI",
+    "summary": "",
+    "link": "https://gist.github.com/cereblab/dc9a40bc26120f4540e4e09b75ffb547",
+    "timestamp": 1783818590.0
   },
   "points": [
     {
-      "heading": "Critical Linux Bug Found",
-      "detail": "GhostLock, a use-after-free bug, sat in the Linux kernel for 15 years, allowing any logged-in user to take root."
+      "heading": "Secrets Files Sent Unredacted",
+      "detail": "Grok transmits file contents, including unredacted secrets from a .env file, to xAI."
     },
     {
-      "heading": "Widespread Vulnerability",
-      "detail": "The flaw shipped by default in essentially every mainstream distribution since 2011, requiring no special permissions."
+      "heading": "Whole Repo Snapshot Uploaded",
+      "detail": "Grok uploads a snapshot of the entire workspace, proven by 5.1 GiB of a 12 GB repo sent."
     },
     {
-      "heading": "AI-Driven Discovery",
-      "detail": "Nebula found the bug with VEGA, its AI-driven bug-hunting tool, part of a run of Linux privilege-escalation flaws."
+      "heading": "Transmission, Acceptance, Storage",
+      "detail": "The teardown proves data transmission, acceptance, and storage by xAI, not whether xAI trains on the data."
     },
     {
-      "heading": "Exploit Reliable, Patches Uneven",
-      "detail": "Nebula\u2019s exploit was 97 percent reliable; the bug was fixed in April, but patch availability is uneven."
+      "heading": "Findings are Reproducible",
+      "detail": "The findings are backed by captured artifacts (like endpoint, HTTP method) and reproducible commands."
     }
   ]
 }
